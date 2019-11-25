@@ -19,6 +19,10 @@ class JeaSessionConfiguration {
     ## RoleDefinitions = '@{ Everyone = @{ RoleCapabilities = "BaseJeaCapabilities" } }'
     [Dscproperty(Mandatory)]
     [string] $RoleDefinitions
+    
+    ## run the endpoint under a Virtual Account
+    [DscProperty()]
+    [bool] $RunAsVirtualAccount
 
     ## The optional groups to be used when the endpoint is configured to
     ## run as a Virtual Account
@@ -136,8 +140,8 @@ class JeaSessionConfiguration {
 
         $psscPath = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName() + ".pssc")
         $configurationFileArguments = @{
-            Path = $psscPath
-            SessionType = 'RestrictedRemoteServer'
+            Path        = $psscPath
+            SessionType = $this.SessionType
         }
 
         if ($this.Ensure -eq [Ensure]::Present) {
@@ -148,7 +152,11 @@ class JeaSessionConfiguration {
             ## Convert- the RoleDefinitions string to the actual Hashtable
             $configurationFileArguments["RoleDefinitions"] = Convert-StringToHashtable -hashtableAsString $this.RoleDefinitions
 
-            ## Set up the JEA identity
+            ## Set up the JEA identity            
+            if ($this.RunAsVirtualAccount) {
+                $configurationFileArguments['RunAsVirtualAccount'] = $true
+            }
+
             if ($this.RunAsVirtualAccountGroups) {
                 $configurationFileArguments["RunAsVirtualAccount"] = $true
                 $configurationFileArguments["RunAsVirtualAccountGroups"] = $this.RunAsVirtualAccountGroups
@@ -166,7 +174,7 @@ class JeaSessionConfiguration {
             }
 
             ## SessionType
-            if($this.SessionType) {
+            if ($this.SessionType) {
                 $configurationFileArguments["SessionType"] = $this.SessionType
             }
 
@@ -344,7 +352,7 @@ class JeaSessionConfiguration {
             return $false
         }
 
-        if($currentInstance.SessionType -ne $this.SessionType) {
+        if ($currentInstance.SessionType -ne $this.SessionType) {
             Write-Verbose "SessionType not equal: $($currentInstance.SessionType)"
             return $false
         }
@@ -443,11 +451,11 @@ class JeaSessionConfiguration {
     ## A simple comparison for complex objects used in JEA configurations.
     ## We don't need anything extensive, as we should be the only ones changing them.
     hidden [bool] ComplexObjectsEqual($object1, $object2) {
-        $object1ordered = [System.Collections.Specialized.OrderedDictionary]@{}
-        $object1.Keys | Sort-Object -Descending | ForEach-Object {$object1ordered.Insert(0, $_, $object1["$_"])}
+        $object1ordered = [System.Collections.Specialized.OrderedDictionary]@{ }
+        $object1.Keys | Sort-Object -Descending | ForEach-Object { $object1ordered.Insert(0, $_, $object1["$_"]) }
 
-        $object2ordered = [System.Collections.Specialized.OrderedDictionary]@{}
-        $object2.Keys | Sort-Object -Descending | ForEach-Object {$object2ordered.Insert(0, $_, $object2["$_"])}
+        $object2ordered = [System.Collections.Specialized.OrderedDictionary]@{ }
+        $object2.Keys | Sort-Object -Descending | ForEach-Object { $object2ordered.Insert(0, $_, $object2["$_"]) }
 
         $json1 = ConvertTo-Json -InputObject $object1ordered -Depth 100
         $json2 = ConvertTo-Json -InputObject $object2ordered -Depth 100
@@ -606,7 +614,7 @@ class JeaSessionConfiguration {
             $returnObject.TranscriptDirectory = $configFileArguments.TranscriptDirectory
         }
 
-        if($configFileArguments.SessionType) {
+        if ($configFileArguments.SessionType) {
             $returnObject.SessionType = $configFileArguments.SessionType
         }
 
