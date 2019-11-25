@@ -1,4 +1,5 @@
 using namespace System.Management.Automation.Language
+
 enum Ensure {
     Present
     Absent
@@ -111,6 +112,7 @@ class JeaRoleCapabilities {
         }
 
         Write-Verbose -Message "Path is a valid psrc path. Returning true."
+        #Wait-Debugger
         return $true
     }
 
@@ -125,7 +127,20 @@ class JeaRoleCapabilities {
             }
 
             foreach ($Property in $CurrentStateFile.Keys) {
-                $CurrentState.$Property = $CurrentStateFile[$Property]
+                $CurrentState.$Property = foreach ($propertyValue in $CurrentStateFile[$Property]) {
+                    if ($propertyValue -is [hashtable]) {
+                        if ($propertyValue.ScriptBlock -is [scriptblock]) {
+                            $code = $propertyValue.ScriptBlock.Ast.Extent.Text
+                            $code -match '(?<=\{)(?<Code>((.|\s)*))(?=\})' | Out-Null
+                            $propertyValue.ScriptBlock = [scriptblock]::Create($Matches.Code)
+                        }
+                    
+                        ConvertTo-Expression -Object $propertyValue
+                    }
+                    else {
+                        $propertyValue
+                    }
+                }
             }
             $CurrentState.Ensure = [Ensure]::Present
         }
@@ -141,7 +156,7 @@ class JeaRoleCapabilities {
             $Parameters = Convert-ObjectToHashtable($this)
             $Parameters.Remove('Ensure')
 
-            Foreach ($Parameter in $Parameters.Keys.Where( {$Parameters[$_] -match '@{'})) {
+            Foreach ($Parameter in $Parameters.Keys.Where( { $Parameters[$_] -match '@{' })) {
                 $Parameters[$Parameter] = Convert-StringToObject -InputString $Parameters[$Parameter]
             }
 
@@ -176,9 +191,11 @@ class JeaRoleCapabilities {
             return $false
         }
         elseif ($this.Ensure -eq [Ensure]::Present -and (Test-Path -Path $this.Path)) {
+
             $CurrentState = Convert-ObjectToHashtable -Object $this.Get()
 
             $Parameters = Convert-ObjectToHashtable -Object $this
+
             $Compare = Compare-JeaConfiguration -ReferenceObject $CurrentState -DifferenceObject $Parameters
 
             if ($null -eq $Compare) {
@@ -210,9 +227,9 @@ function Convert-StringToObject {
     $AST = [Parser]::ParseInput($FakeCommand, [ref]$null, [ref]$ParseErrors)
     if (-not $ParseErrors) {
         # Use Ast.Find() to locate the CommandAst parsed from our fake command
-        $CmdAst = $AST.Find( {param($ChildAst) $ChildAst -is [CommandAst]}, $false)
+        $CmdAst = $AST.Find( { param($ChildAst) $ChildAst -is [CommandAst] }, $false)
         # Grab the user-supplied arguments (index 0 is the command name, 1 is our fake parameter)
-        $AllArgumentAst = $CmdAst.CommandElements.Where( {$_ -isnot [CommandParameterAst] -and $_.Value -ne 'Totally-NotACmdlet'})
+        $AllArgumentAst = $CmdAst.CommandElements.Where( { $_ -isnot [CommandParameterAst] -and $_.Value -ne 'Totally-NotACmdlet' })
         foreach ($ArgumentAst in $AllArgumentAst) {
             if ($ArgumentAst -is [ArrayLiteralAst]) {
                 # Argument was a list
