@@ -451,21 +451,38 @@ class JeaSessionConfiguration {
     ## A simple comparison for complex objects used in JEA configurations.
     ## We don't need anything extensive, as we should be the only ones changing them.
     hidden [bool] ComplexObjectsEqual($object1, $object2) {
-        $object1ordered = [System.Collections.Specialized.OrderedDictionary]@{ }
-        $object1.Keys | Sort-Object -Descending | ForEach-Object { $object1ordered.Insert(0, $_, $object1["$_"]) }
-
-        $object2ordered = [System.Collections.Specialized.OrderedDictionary]@{ }
-        $object2.Keys | Sort-Object -Descending | ForEach-Object { $object2ordered.Insert(0, $_, $object2["$_"]) }
-
-        $json1 = ConvertTo-Json -InputObject $object1ordered -Depth 100
-        $json2 = ConvertTo-Json -InputObject $object2ordered -Depth 100
-
-        if ($json1 -ne $json2) {
-            Write-Verbose "object1: $json1"
-            Write-Verbose "object2: $json2"
+        if ($object1.Count -ne $object2.Count) {
+            return $false
         }
 
-        return ($json1 -eq $json2)
+        if ($object1 -isnot [System.Array]) {
+            $object1 = @($object1)
+        }
+        if ($object2 -isnot [System.Array]) {
+            $object2 = @($object2)
+        }
+
+        for ($i = 0; $i -lt $object1.Count; $i++) {
+            $object1ordered = [System.Collections.Specialized.OrderedDictionary]@{ }
+            $object1[$i].Keys | Sort-Object -Descending | ForEach-Object { $object1ordered.Insert(0, $_, $object1[$i]["$_"]) }
+
+            $object2ordered = [System.Collections.Specialized.OrderedDictionary]@{ }
+            $object2[$i].Keys | Sort-Object -Descending | ForEach-Object { $object2ordered.Insert(0, $_, $object2[$i]["$_"]) }
+
+            $json1 = ConvertTo-Json -InputObject $object1ordered -Depth 100
+            $json2 = ConvertTo-Json -InputObject $object2ordered -Depth 100
+
+            if ($json1 -ne $json2) {
+                Write-Verbose "object1: $json1"
+                Write-Verbose "object2: $json2"
+            }
+
+            if ($json1 -ne $json2) {
+                return $false
+            }
+        }
+
+        return $true
     }
 
     ## Get a PS Session Configuration based on its name
