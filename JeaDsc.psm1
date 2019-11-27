@@ -51,43 +51,45 @@ Function Convert-StringToArrayOfObject($literalString) {
     # 1. single string
     # 2. single hashtable
     # 3. array of strings and/or hashtables
-    $predicate = {
-        param($ast)
+    #$predicate = {
+    #    param($ast)
+    #
+    #    if ($ast -is [System.Management.Automation.Language.HashtableAst]) {
+    #        # single hashtable or array item as hashtable
+    #        return ($ast.Parent -is [System.Management.Automation.Language.ArrayLiteralAst]) -or `
+    #        ($ast.Parent -is [System.Management.Automation.Language.CommandExpressionAst])
+    #    }
+    #    elseif ($ast -is [System.Management.Automation.Language.StringConstantExpressionAst]) {
+    #        # array item as string
+    #        if ($ast.Parent -is [System.Management.Automation.Language.ArrayLiteralAst]) {
+    #            return $true
+    #        }
+    #
+    #        do {
+    #            if ($ast.Parent -is [System.Management.Automation.Language.HashtableAst]) {
+    #                # string nested within a hashtable
+    #                return $false
+    #            }
+    #
+    #            $ast = $ast.Parent
+    #        }
+    #        while ( $ast -ne $null )
+    #
+    #        # single string
+    #        return $true
+    #    }
+    #
+    #    return $false
+    #}
 
-        if ($ast -is [System.Management.Automation.Language.HashtableAst]) {
-            # single hashtable or array item as hashtable
-            return ($ast.Parent -is [System.Management.Automation.Language.ArrayLiteralAst]) -or `
-            ($ast.Parent -is [System.Management.Automation.Language.CommandExpressionAst])
-        }
-        elseif ($ast -is [System.Management.Automation.Language.StringConstantExpressionAst]) {
-            # array item as string
-            if ($ast.Parent -is [System.Management.Automation.Language.ArrayLiteralAst]) {
-                return $true
-            }
+    #$rootAst = [System.Management.Automation.Language.Parser]::ParseInput($literalString, [ref] $null, [ref] $null)
+    #$data = $rootAst.FindAll($predicate, $false)
+    #
+    #foreach ($datum in $data) {
+    #    $items += $datum.SafeGetValue()
+    #}
 
-            do {
-                if ($ast.Parent -is [System.Management.Automation.Language.HashtableAst]) {
-                    # string nested within a hashtable
-                    return $false
-                }
-
-                $ast = $ast.Parent
-            }
-            while ( $ast -ne $null )
-
-            # single string
-            return $true
-        }
-
-        return $false
-    }
-
-    $rootAst = [System.Management.Automation.Language.Parser]::ParseInput($literalString, [ref] $null, [ref] $null)
-    $data = $rootAst.FindAll($predicate, $false)
-
-    foreach ($datum in $data) {
-        $items += $datum.SafeGetValue()
-    }
+    $items = Invoke-Expression -Command $literalString
 
     return $items
 }
@@ -409,5 +411,62 @@ Function ConvertTo-Expression {
     Process {
         $Expression = (Serialize $Object).TrimEnd()
         Try { [ScriptBlock]::Create($Expression) } Catch { $PSCmdlet.WriteError($_); $Expression }
+    }
+}
+
+function Convert-StringToObject {
+    [cmdletbinding()]
+    param (
+        [string[]]$InputString
+    )
+
+    $ParseErrors = @()
+    $FakeCommand = "Totally-NotACmdlet -FakeParameter $InputString"
+    $AST = [Parser]::ParseInput($FakeCommand, [ref]$null, [ref]$ParseErrors)
+    if (-not $ParseErrors) {
+        # Use Ast.Find() to locate the CommandAst parsed from our fake command
+        $CmdAst = $AST.Find( { param($ChildAst) $ChildAst -is [CommandAst] }, $false)
+        # Grab the user-supplied arguments (index 0 is the command name, 1 is our fake parameter)
+        $AllArgumentAst = $CmdAst.CommandElements.Where( { $_ -isnot [CommandParameterAst] -and $_.Value -ne 'Totally-NotACmdlet' })
+        foreach ($ArgumentAst in $AllArgumentAst) {
+            if ($ArgumentAst -is [ArrayLiteralAst]) {
+                # Argument was a list
+                foreach ($Element in $ArgumentAst.Elements) {
+                    if ($Element.StaticType.Name -eq 'String') {
+                        $Element.value
+                    }
+                    if ($Element.StaticType.Name -eq 'Hashtable') {
+                        [Hashtable]$Element.SafeGetValue()
+                    }
+                }
+            }
+            else {
+                if ($ArgumentAst -is [HashtableAst]) {
+                    $ht = [Hashtable]$ArgumentAst.SafeGetValue()
+                    for ($i = 1; $i -lt $ht.Keys.Count; $i++) {
+                        $value = $ht[([array]$ht.Keys)[$i]]
+                        if ($value -is [scriptblock]) {
+
+                            $scriptBlockText = $value.Ast.Extent.Text
+
+                            if ($scriptBlockText[$value.Ast.Extent.StartOffset] -eq '{' -and $scriptBlockText[$endOffset - 1] -eq '}') {
+
+                                $scriptBlockText = $scriptBlockText.Substring(0, $scriptBlockText.Length - 1)
+                                $scriptBlockText = $scriptBlockText.Substring(1, $scriptBlockText.Length - 1)
+                            }
+
+                            $ht[([array]$ht.Keys)[$i]] = [scriptblock]::Create($scriptBlockText)
+                        }
+                    }
+                    $ht
+                }
+                elseif ($ArgumentAst -is [StringConstantExpressionAst]) {
+                    $ArgumentAst.Value
+                }
+                else {
+                    Write-Error -Message "Input was not a valid hashtable, string or collection of both. Please check the contents and try again."
+                }
+            }
+        }
     }
 }
