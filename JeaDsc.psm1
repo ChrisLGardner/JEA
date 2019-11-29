@@ -1,3 +1,5 @@
+using namespace System.Management.Automation.Language
+
 ## Convert a string representing a Hashtable into a Hashtable
 Function Convert-StringToHashtable($hashtableAsString) {
     if ($hashtableAsString -eq $null) {
@@ -47,7 +49,14 @@ Function Convert-StringToArrayOfObject($literalString) {
         return $items
     }
 
-    $items = Invoke-Expression -Command $literalString
+    $items += if ($literalString -like '*@{*') {
+        foreach ($value in $literalString) {
+            Invoke-Expression -Command $value
+        }
+    }
+    else {
+        $literalString
+    }
 
     return $items
 }
@@ -111,6 +120,20 @@ Function Compare-JeaConfiguration {
         $DifferenceObjectordered.VisibleCmdlets = foreach ($visibleCmdlet in $DifferenceObjectordered.VisibleCmdlets) {
             $FunctionDefinition = Invoke-Expression -Command $VisibleCmdlet | ConvertTo-Expression | Out-String
             $FunctionDefinition -replace ' ', ''
+        }
+    }
+
+    if ($ReferenceObjectordered.RoleDefinitions) {
+        $ReferenceObjectordered.RoleDefinitions = foreach ($roleDefinition in $ReferenceObjectordered.RoleDefinitions) {
+            $RoleDefinition = Invoke-Expression -Command $roleDefinition | ConvertTo-Expression | Out-String
+            $RoleDefinition -replace ' ', ''
+        }
+    }
+
+    if ($DifferenceObjectordered.RoleDefinitions) {
+        $DifferenceObjectordered.RoleDefinitions = foreach ($roleDefinition in $DifferenceObjectordered.RoleDefinitions) {
+            $RoleDefinition = Invoke-Expression -Command $roleDefinition | ConvertTo-Expression | Out-String
+            $RoleDefinition -replace ' ', ''
         }
     }
 
@@ -378,51 +401,53 @@ function Convert-StringToObject {
         [string[]]$InputString
     )
 
-    $ParseErrors = @()
-    $FakeCommand = "Totally-NotACmdlet -FakeParameter $InputString"
-    $AST = [Parser]::ParseInput($FakeCommand, [ref]$null, [ref]$ParseErrors)
-    if (-not $ParseErrors) {
-        # Use Ast.Find() to locate the CommandAst parsed from our fake command
-        $CmdAst = $AST.Find( { param($ChildAst) $ChildAst -is [CommandAst] }, $false)
-        # Grab the user-supplied arguments (index 0 is the command name, 1 is our fake parameter)
-        $AllArgumentAst = $CmdAst.CommandElements.Where( { $_ -isnot [CommandParameterAst] -and $_.Value -ne 'Totally-NotACmdlet' })
-        foreach ($ArgumentAst in $AllArgumentAst) {
-            if ($ArgumentAst -is [ArrayLiteralAst]) {
-                # Argument was a list
-                foreach ($Element in $ArgumentAst.Elements) {
-                    if ($Element.StaticType.Name -eq 'String') {
-                        $Element.value
-                    }
-                    if ($Element.StaticType.Name -eq 'Hashtable') {
-                        [Hashtable]$Element.SafeGetValue()
-                    }
-                }
-            }
-            else {
-                if ($ArgumentAst -is [HashtableAst]) {
-                    $ht = [Hashtable]$ArgumentAst.SafeGetValue()
-                    for ($i = 1; $i -lt $ht.Keys.Count; $i++) {
-                        $value = $ht[([array]$ht.Keys)[$i]]
-                        if ($value -is [scriptblock]) {
-
-                            $scriptBlockText = $value.Ast.Extent.Text
-
-                            if ($scriptBlockText[$value.Ast.Extent.StartOffset] -eq '{' -and $scriptBlockText[$endOffset - 1] -eq '}') {
-
-                                $scriptBlockText = $scriptBlockText.Substring(0, $scriptBlockText.Length - 1)
-                                $scriptBlockText = $scriptBlockText.Substring(1, $scriptBlockText.Length - 1)
-                            }
-
-                            $ht[([array]$ht.Keys)[$i]] = [scriptblock]::Create($scriptBlockText)
+    foreach ($string in $InputString) {
+        $ParseErrors = @()
+        $FakeCommand = "Totally-NotACmdlet -FakeParameter $string"
+        $AST = [Parser]::ParseInput($FakeCommand, [ref]$null, [ref]$ParseErrors)
+        if (-not $ParseErrors) {
+            # Use Ast.Find() to locate the CommandAst parsed from our fake command
+            $CmdAst = $AST.Find( { param($ChildAst) $ChildAst -is [CommandAst] }, $false)
+            # Grab the user-supplied arguments (index 0 is the command name, 1 is our fake parameter)
+            $AllArgumentAst = $CmdAst.CommandElements.Where( { $_ -isnot [CommandParameterAst] -and $_.Value -ne 'Totally-NotACmdlet' })
+            foreach ($ArgumentAst in $AllArgumentAst) {
+                if ($ArgumentAst -is [ArrayLiteralAst]) {
+                    # Argument was a list
+                    foreach ($Element in $ArgumentAst.Elements) {
+                        if ($Element.StaticType.Name -eq 'String') {
+                            $Element.value
+                        }
+                        if ($Element.StaticType.Name -eq 'Hashtable') {
+                            [Hashtable]$Element.SafeGetValue()
                         }
                     }
-                    $ht
-                }
-                elseif ($ArgumentAst -is [StringConstantExpressionAst]) {
-                    $ArgumentAst.Value
                 }
                 else {
-                    Write-Error -Message "Input was not a valid hashtable, string or collection of both. Please check the contents and try again."
+                    if ($ArgumentAst -is [HashtableAst]) {
+                        $ht = [Hashtable]$ArgumentAst.SafeGetValue()
+                        for ($i = 1; $i -lt $ht.Keys.Count; $i++) {
+                            $value = $ht[([array]$ht.Keys)[$i]]
+                            if ($value -is [scriptblock]) {
+
+                                $scriptBlockText = $value.Ast.Extent.Text
+
+                                if ($scriptBlockText[$value.Ast.Extent.StartOffset] -eq '{' -and $scriptBlockText[$endOffset - 1] -eq '}') {
+
+                                    $scriptBlockText = $scriptBlockText.Substring(0, $scriptBlockText.Length - 1)
+                                    $scriptBlockText = $scriptBlockText.Substring(1, $scriptBlockText.Length - 1)
+                                }
+
+                                $ht[([array]$ht.Keys)[$i]] = [scriptblock]::Create($scriptBlockText)
+                            }
+                        }
+                        $ht
+                    }
+                    elseif ($ArgumentAst -is [StringConstantExpressionAst]) {
+                        $ArgumentAst.Value
+                    }
+                    else {
+                        Write-Error -Message "Input was not a valid hashtable, string or collection of both. Please check the contents and try again."
+                    }
                 }
             }
         }
