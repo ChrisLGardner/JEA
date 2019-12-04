@@ -83,7 +83,7 @@ class JeaSessionConfiguration {
     ## This should be a string that represents a string, a Hashtable, or array of strings and/or Hashtables
     ## VisibleFunctions = "'Invoke-Function1', @{ Name = 'Invoke-Function2'; Parameters = @{ Name = 'Parameter1'; ValidateSet = 'Item1', 'Item2' }, @{ Name = 'Parameter2'; ValidatePattern = 'L*' } }"
     [Dscproperty()]
-    [string] $VisibleFunctions
+    [string[]] $VisibleFunctions
 
     ## The optional external commands (scripts and applications) to make visible when applied to a session
     [Dscproperty()]
@@ -303,7 +303,7 @@ class JeaSessionConfiguration {
 
             if ($this.Ensure -eq [Ensure]::Present) {
                 ## Create the configuration file
-                New-PSSessionConfigurationFile @Parameters
+                New-PSSessionConfigurationFile @configurationFileArguments
                 ## Register the configuration file
                 $this.RegisterPSSessionConfiguration($this.Name, $psscPath, $this.HungRegistrationTimeout)
 
@@ -330,12 +330,6 @@ class JeaSessionConfiguration {
             return $false
         }
 
-        ## If this was configured with our mandatory property (RoleDefinitions), dig deeper
-        #if (-not $currentState.RoleDefinitions) {
-        #    Write-Verbose "No RoleDefinitions found"
-        #    return $false
-        #}
-
         if ($currentState.Name -ne $this.Name) {
             Write-Verbose "Name not equal: $($currentState.Name)"
             return $false
@@ -353,124 +347,6 @@ class JeaSessionConfiguration {
         else {
             return $false
         }
-
-        ## Convert the RoleDefinitions string to the actual Hashtable
-        #$roleDefinitionsHash = Convert-StringToHashtable -hashtableAsString $this.RoleDefinitions
-        #
-        #if (-not $this.ComplexObjectsEqual((Convert-StringToHashtable -hashtableAsString $currentInstance.RoleDefinitions), $roleDefinitionsHash)) {
-        #    Write-Verbose "RoleDfinitions not equal: $($currentInstance.RoleDefinitions)"
-        #    return $false
-        #}
-        #
-        #if (-not $this.ComplexObjectsEqual($currentInstance.RunAsVirtualAccountGroups, $this.RunAsVirtualAccountGroups)) {
-        #    Write-Verbose "RunAsVirtualAccountGroups not equal: $(ConvertTo-Json $currentInstance.RunAsVirtualAccountGroups -Depth 100)"
-        #    return $false
-        #}
-        #
-        #if ($currentInstance.GroupManagedServiceAccount -or $this.GroupManagedServiceAccount) {
-        #    if ($currentInstance.GroupManagedServiceAccount -ne ($this.GroupManagedServiceAccount -replace '\$$', '')) {
-        #        Write-Verbose "GroupManagedServiceAccount not equal: $($currentInstance.GroupManagedServiceAccount)"
-        #        return $false
-        #    }
-        #}
-        #
-        #if ($currentInstance.TranscriptDirectory -ne $this.TranscriptDirectory) {
-        #    Write-Verbose "TranscriptDirectory not equal: $($currentInstance.TranscriptDirectory)"
-        #    return $false
-        #}
-        #
-        #if ($currentInstance.SessionType -ne $this.SessionType) {
-        #    Write-Verbose "SessionType not equal: $($currentInstance.SessionType)"
-        #    return $false
-        #}
-        #
-        #if (-not $this.ComplexObjectsEqual($currentInstance.ScriptsToProcess, $this.ScriptsToProcess)) {
-        #    Write-Verbose "ScriptsToProcess not equal: $(ConvertTo-Json $currentInstance.ScriptsToProcess -Depth 100)"
-        #    return $false
-        #}
-        #
-        #if ($currentInstance.MountUserDrive -ne $this.MountUserDrive) {
-        #    Write-Verbose "MountUserDrive not equal: $($currentInstance.MountUserDrive)"
-        #    return $false
-        #}
-        #
-        #if ($currentInstance.UserDriveMaximumSize -ne $this.UserDriveMaximumSize) {
-        #    Write-Verbose "UserDriveMaximumSize not equal: $($currentInstance.UserDriveMaximumSize)"
-        #    return $false
-        #}
-        #
-        ## Check for null required groups
-        #$requiredGroupsHash = Convert-StringToHashtable -hashtableAsString $this.RequiredGroups
-        #
-        #if (-not $this.ComplexObjectsEqual((Convert-StringToHashtable -hashtableAsString $currentInstance.RequiredGroups), $requiredGroupsHash)) {
-        #    Write-Verbose "RequiredGroups not equal: $(ConvertTo-Json $currentInstance.RequiredGroups -Depth 100)"
-        #    return $false
-        #}
-        #
-        #if (-not $this.ComplexObjectsEqual((Convert-StringToArrayOfObject -literalString $currentInstance.ModulesToImport), (Convert-StringToArrayOfObject -literalString $this.ModulesToImport))) {
-        #    Write-Verbose "ModulesToImport not equal: $(ConvertTo-Json $currentInstance.ModulesToImport -Depth 100)"
-        #    return $false
-        #}
-        #
-        #if (-not $this.ComplexObjectsEqual($currentInstance.VisibleAliases, $this.VisibleAliases)) {
-        #    Write-Verbose "VisibleAliases not equal: $(ConvertTo-Json $currentInstance.VisibleAliases -Depth 100)"
-        #    return $false
-        #}
-        #
-        #if (-not $this.ComplexObjectsEqual((Convert-StringToArrayOfObject -literalString $currentInstance.VisibleCmdlets), (Convert-StringToArrayOfObject -literalString $this.VisibleCmdlets))) {
-        #    Write-Verbose "VisibleCmdlets not equal: $(ConvertTo-Json $currentInstance.VisibleCmdlets -Depth 100)"
-        #    return $false
-        #}
-        #
-        #if (-not $this.ComplexObjectsEqual((Convert-StringToArrayOfObject -literalString $currentInstance.VisibleFunctions), (Convert-StringToArrayOfObject -literalString $this.VisibleFunctions))) {
-        #    Write-Verbose "VisibleFunctions not equal: $(ConvertTo-Json $currentInstance.VisibleFunctions -Depth 100)"
-        #    return $false
-        #}
-        #
-        #if (-not $this.ComplexObjectsEqual($currentInstance.VisibleExternalCommands, $this.VisibleExternalCommands)) {
-        #    Write-Verbose "VisibleExternalCommands not equal: $(ConvertTo-Json $currentInstance.VisibleExternalCommands -Depth 100)"
-        #    return $false
-        #}
-        #
-        #if (-not $this.ComplexObjectsEqual($currentInstance.VisibleProviders, $this.VisibleProviders)) {
-        #    Write-Verbose "VisibleProviders not equal: $(ConvertTo-Json $currentInstance.VisibleProviders -Depth 100)"
-        #    return $false
-        #}
-        #
-        #if (-not $this.ComplexObjectsEqual((Convert-StringToArrayOfHashtable -literalString $currentInstance.AliasDefinitions), (Convert-StringToArrayOfHashtable -literalString $this.AliasDefinitions))) {
-        #    Write-Verbose "AliasDefinitions not equal: $(ConvertTo-Json $currentInstance.AliasDefinitions -Depth 100)"
-        #    return $false
-        #}
-        #
-        #if (-not $this.ComplexObjectsEqual((Convert-StringToArrayOfHashtable -literalString $currentInstance.FunctionDefinitions), (Convert-StringToArrayOfHashtable -literalString $this.FunctionDefinitions))) {
-        #    Write-Verbose "FunctionDefinitions not equal: $(ConvertTo-Json $currentInstance.FunctionDefinitions -Depth 100)"
-        #    return $false
-        #}
-        #
-        #if (-not $this.ComplexObjectsEqual((Convert-StringToArrayOfHashtable -literalString $currentInstance.VariableDefinitions), (Convert-StringToArrayOfHashtable -literalString $this.VariableDefinitions))) {
-        #    Write-Verbose "VariableDefinitions not equal: $(ConvertTo-Json $currentInstance.VariableDefinitions -Depth 100)"
-        #    return $false
-        #}
-        #
-        #if (-not $this.ComplexObjectsEqual((Convert-StringToHashtable -hashtableAsString $currentInstance.EnvironmentVariables), (Convert-StringToHashtable -hashtableAsString $this.EnvironmentVariables))) {
-        #    Write-Verbose "EnvironmentVariables not equal: $(ConvertTo-Json $currentInstance.EnvironmentVariables -Depth 100)"
-        #    return $false
-        #}
-        #
-        #if (-not $this.ComplexObjectsEqual($currentInstance.TypesToProcess, $this.TypesToProcess)) {
-        #    Write-Verbose "TypesToProcess not equal: $(ConvertTo-Json $currentInstance.TypesToProcess -Depth 100)"
-        #    return $false
-        #}
-        #
-        #if (-not $this.ComplexObjectsEqual($currentInstance.FormatsToProcess, $this.FormatsToProcess)) {
-        #    Write-Verbose "FormatsToProcess not equal: $(ConvertTo-Json $currentInstance.FormatsToProcess -Depth 100)"
-        #    return $false
-        #}
-        #
-        #if (-not $this.ComplexObjectsEqual($currentInstance.AssembliesToLoad, $this.AssembliesToLoad)) {
-        #    Write-Verbose "AssembliesToLoad not equal: $(ConvertTo-Json $currentInstance.AssembliesToLoad -Depth 100)"
-        #    return $false
-        #}
 
         return $true
     }
@@ -571,10 +447,10 @@ class JeaSessionConfiguration {
             }
 
             if ($Path) {
-                $registerString = "`$null = Register-PSSessionConfiguration -Name '$Name' -Path '$Path' -Force -ErrorAction 'Stop' -WarningAction 'SilentlyContinue'"
+                $registerString = "`$null = Register-PSSessionConfiguration -Name '$Name' -Path '$Path' -NoServiceRestart -Force -ErrorAction 'Stop' -WarningAction 'SilentlyContinue'"
             }
             else {
-                $registerString = "`$null = Register-PSSessionConfiguration -Name '$Name' -Force -ErrorAction 'Stop' -WarningAction 'SilentlyContinue'"
+                $registerString = "`$null = Register-PSSessionConfiguration -Name '$Name' -NoServiceRestart -Force -ErrorAction 'Stop' -WarningAction 'SilentlyContinue'"
             }
 
             $registerScriptBlock = [Scriptblock]::Create($registerString)
@@ -648,23 +524,20 @@ class JeaSessionConfiguration {
 
         foreach ($Property in $configFile.Keys) {
              
-            $propertyValues = foreach ($propertyValue in $configFile[$Property]) {
+            #$propertyValues = foreach ($propertyValue in $configFile[$Property]) {
+            $currentState.$Property = foreach ($propertyValue in $configFile[$Property]) {
                 if ($propertyValue -is [hashtable]) {
                     if ($propertyValue.ScriptBlock -is [scriptblock]) {
                         $code = $propertyValue.ScriptBlock.Ast.Extent.Text
-                        $code -match '(?<=\{)(?<Code>((.|\s)*))(?=\})' | Out-Null
+                        $code -match '(?<=\{\{)(?<Code>((.|\s)*))(?=\}\})' | Out-Null
                         $propertyValue.ScriptBlock = [scriptblock]::Create($Matches.Code)
                     }
-                }
 
-                $propertyValue
-            }
-            
-            $currentState.$Property = if ($propertyValues | Get-Member | Where-Object TypeName -eq 'System.Collections.Hashtable') {
-                ConvertTo-Expression -Object $propertyValues
-            }
-            else {
-                $propertyValue
+                    ConvertTo-Expression -Object $propertyValue
+                }
+                else {
+                    $propertyValue
+                }
             }
         }
 
