@@ -1,5 +1,3 @@
-using namespace System.Management.Automation.Language
-
 enum Ensure {
     Present
     Absent
