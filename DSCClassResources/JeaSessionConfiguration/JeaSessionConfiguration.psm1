@@ -146,6 +146,15 @@ class JeaSessionConfiguration {
         if ($this.RunAsVirtualAccountGroups -and $this.GroupManagedServiceAccount) {
             throw "The RunAsVirtualAccountGroups setting can not be used when a configuration is set to run as a Group Managed Service Account"
         }
+        
+        if ($this.GroupManagedServiceAccount -and $this.RunAsVirtualAccount) {
+            throw "The properties 'GroupManagedServiceAccount' and 'RunAsVirtualAccount' cannot be used together."
+        }
+
+        if (-not $this.GroupManagedServiceAccount) {
+            $this.RunAsVirtualAccount = $true
+            Write-Warning "'GroupManagedServiceAccount' and 'RunAsVirtualAccount' are not defined, setting 'RunAsVirtualAccount' to 'true'."
+        }
 
         $Parameters = Convert-ObjectToHashtable($this)
         $Parameters.Remove('Ensure')
@@ -318,7 +327,7 @@ class JeaSessionConfiguration {
 
     # Tests if the resource is in the desired state.
     [bool] Test() {
-        $CurrentState = Convert-ObjectToHashtable -Object $this.Get()
+        $currentState = Convert-ObjectToHashtable -Object $this.Get()
 
         # short-circuit if the resource is not present and is not supposed to be present
         if ($this.Ensure -eq [Ensure]::Absent) {
@@ -334,12 +343,22 @@ class JeaSessionConfiguration {
             Write-Verbose "Name not equal: $($currentState.Name)"
             return $false
         }
+        
+        if ($this.GroupManagedServiceAccount -and $this.RunAsVirtualAccount) {
+            Write-Warning "The properties 'GroupManagedServiceAccount' and 'RunAsVirtualAccount' cannot be used together."
+            return $false
+        }
 
-        $Parameters = Convert-ObjectToHashtable -Object $this
-        $Parameters.Remove('HungRegistrationTimeout')
-        $CurrentState.Remove('HungRegistrationTimeout')
+        if (-not $this.GroupManagedServiceAccount) {
+            $this.RunAsVirtualAccount = $true
+            Write-Warning "'GroupManagedServiceAccount' and 'RunAsVirtualAccount' are not defined, setting 'RunAsVirtualAccount' to 'true'."
+        }
 
-        $Compare = Compare-JeaConfiguration -ReferenceObject $CurrentState -DifferenceObject $Parameters
+        $parameters = Convert-ObjectToHashtable -Object $this
+        $parameters.Remove('HungRegistrationTimeout')
+        $currentState.Remove('HungRegistrationTimeout')
+
+        $Compare = Compare-JeaConfiguration -ReferenceObject $currentState -DifferenceObject $parameters
 
         if ($null -eq $Compare) {
             return $true
@@ -523,8 +542,6 @@ class JeaSessionConfiguration {
         }  
 
         foreach ($Property in $configFile.Keys) {
-             
-            #$propertyValues = foreach ($propertyValue in $configFile[$Property]) {
             $currentState.$Property = foreach ($propertyValue in $configFile[$Property]) {
                 if ($propertyValue -is [hashtable]) {
                     if ($propertyValue.ScriptBlock -is [scriptblock]) {
