@@ -55,7 +55,7 @@ function Convert-StringToArrayOfHashtable {
 function Convert-StringToArrayOfObject {
     param(
         [Parameter(Mandatory)]
-        [string]$HashtableAsString
+        [string]$LiteralString
     )
 
     $items = @()
@@ -89,7 +89,6 @@ Function Convert-ObjectToHashtable {
 
     return $Parameters
 }
-
 
 Function Compare-JeaConfiguration {
     [cmdletbinding()]
@@ -381,7 +380,7 @@ Function ConvertTo-Expression {
                             $LineFeed = $NewLine + ($Tab * $Indent)
                             (Prefix) + "@{$LineFeed$Tab" + (@(ForEach ($Key in $List.get_Keys()) {
                                         If (($List.$Key)[0] -NotMatch '[\S]') { "$Key =$($List.$Key)".TrimEnd() } Else { "$Key = $($List.$Key)".TrimEnd() }
-                            }) -Join "$LineFeed$Tab") + "$LineFeed}"
+                                    }) -Join "$LineFeed$Tab") + "$LineFeed}"
                         }
                     }
                     Else { (Prefix) + ",$List" }
