@@ -78,11 +78,15 @@ class JeaRoleCapabilities {
     # Specifies the formatting files (.ps1xml) that run in sessions that use the role capability file.
     # The value of this parameter must be a full or absolute path of the formatting files.
     [DscProperty()]
-    [String[]]$FormatsToProcess
+    [string[]]$FormatsToProcess
 
     # Specifies the assemblies to load into the sessions that use the role capability file.
     [DscProperty()]
-    [String[]]$AssembliesToLoad
+    [string]$Description
+    
+    # Description of the role
+    [DscProperty()]
+    [string]$AssembliesToLoad
 
     Hidden [Boolean] ValidatePath() {
         $FileObject = [System.IO.FileInfo]::new($this.Path)
@@ -151,27 +155,27 @@ class JeaRoleCapabilities {
     [void] Set() {
         if ($this.Ensure -eq [Ensure]::Present) {
 
-            $Parameters = Convert-ObjectToHashtable($this)
-            $Parameters.Remove('Ensure')
+            $parameters = Convert-ObjectToHashtable($this)
+            $parameters.Remove('Ensure')
 
-            Foreach ($Parameter in $Parameters.Keys.Where( { $Parameters[$_] -match '@{' })) {
-                $Parameters[$Parameter] = Convert-StringToObject -InputString $Parameters[$Parameter]
+            Foreach ($Parameter in $parameters.Keys.Where( { $parameters[$_] -match '@{' })) {
+                $parameters[$Parameter] = Convert-StringToObject -InputString $parameters[$Parameter]
             }
 
-            $InvalidConfiguration = $false
+            $invalidConfiguration = $false
 
-            if ($Parameters.ContainsKey('FunctionDefinitions')) {
-                foreach ($FunctionDefName in $Parameters['FunctionDefinitions'].Name) {
-                    if ($FunctionDefName -notin $Parameters['VisibleFunctions']) {
-                        Write-Error -Message "Function defined but not visible to Role Configuration: $FunctionDefName"
-                        $InvalidConfiguration = $true
+            if ($parameters.ContainsKey('FunctionDefinitions')) {
+                foreach ($functionDefName in $parameters['FunctionDefinitions'].Name) {
+                    if ($functionDefName -notin $parameters['VisibleFunctions']) {
+                        Write-Error -Message "Function defined but not visible to Role Configuration: $functionDefName"
+                        $invalidConfiguration = $true
                     }
                 }
             }
-            if (-not $InvalidConfiguration) {
+            if (-not $invalidConfiguration) {
                 $null = New-Item -Path $this.Path -ItemType File -Force
 
-                New-PSRoleCapabilityFile @Parameters
+                New-PSRoleCapabilityFile @parameters
             }
         }
         elseif ($this.Ensure -eq [Ensure]::Absent -and (Test-Path -Path $this.Path)) {
@@ -194,14 +198,9 @@ class JeaRoleCapabilities {
 
             $Parameters = Convert-ObjectToHashtable -Object $this
 
-            $Compare = Compare-JeaConfiguration -ReferenceObject $CurrentState -DifferenceObject $Parameters
+            $compare = Compare-JeaConfiguration -ReferenceObject $CurrentState -DifferenceObject $Parameters
 
-            if ($null -eq $Compare) {
-                return $true
-            }
-            else {
-                return $false
-            }
+            return $compare
         }
         elseif ($this.Ensure -eq [Ensure]::Absent -and (Test-Path -Path $this.Path)) {
             return $false

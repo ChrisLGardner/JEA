@@ -21,6 +21,7 @@ Write-Host 'DNS Management Endpoint' -ForegroundColor Green
                 ValidateSet = 'Dns'
             }
         }"
+        Description    = 'DnsAdmin demo role capability file'
     }
     
     JeaRoleCapabilities DnsViewerRoleCapability {
@@ -31,6 +32,7 @@ Write-Host 'DNS Management Endpoint' -ForegroundColor Green
             Name = "Get-DnsServerLog"
             ScriptBlock = { param([long]$MaxEvents = 100) Get-WinEvent -ProviderName Microsoft-Windows-Dns-Server-Service -MaxEvents $MaxEvents }
         }'
+        Description         = 'DnsViewer demo role capability file'
     }
 
     JeaSessionConfiguration DnsManagementEndpoint {
@@ -45,11 +47,10 @@ Write-Host 'DNS Management Endpoint' -ForegroundColor Green
     }
 }
 
-#Remove-Item -Path C:\DSC\*
-#DnsAdmin -OutputPath C:\DSC -Verbose
-#
-#Start-DscConfiguration -Path C:\DSC -Wait -Verbose -Force
-JeaRoleCapabilities DnsViewerRoleCapability {
+Remove-Item -Path C:\DSC\*
+DnsAdmin -OutputPath C:\DSC -Verbose
+
+Start-DscConfiguration -Path C:\DSC -Wait -Verbose -Force    JeaRoleCapabilities DnsViewerRoleCapability {
     Path                = 'C:\Program Files\WindowsPowerShell\Modules\DnsAdministration\RoleCapabilities\DnsViewer.psrc'
     VisibleCmdlets      = "@{ Name = 'DnsServer\Get-*' }"
     VisibleFunctions    = 'Get-DnsServerLog'
