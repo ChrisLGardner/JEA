@@ -130,15 +130,25 @@ Function Compare-JeaConfiguration {
     
     if ($referenceObjectOrdered.VisibleCmdlets) {
         $referenceObjectOrdered.VisibleCmdlets = foreach ($visibleCmdlet in $referenceObjectOrdered.VisibleCmdlets) {
-            $functionDefinition = Invoke-Expression -Command $VisibleCmdlet | ConvertTo-Expression | Out-String
-            $functionDefinition -replace ' ', ''
+            if ($referenceObjectOrdered.VisibleCmdlets[0] -match '@{') {
+                $functionDefinition = Invoke-Expression -Command $visibleCmdlet | ConvertTo-Expression | Out-String
+                $functionDefinition -replace ' ', ''
+            }
+            else {
+                $referenceObjectOrdered.VisibleCmdlets
+            }
         }
     }
 
     if ($differenceObjectOrdered.VisibleCmdlets) {
         $differenceObjectOrdered.VisibleCmdlets = foreach ($visibleCmdlet in $differenceObjectOrdered.VisibleCmdlets) {
-            $functionDefinition = Invoke-Expression -Command $VisibleCmdlet | ConvertTo-Expression | Out-String
-            $functionDefinition -replace ' ', ''
+            if ($differenceObjectOrdered.VisibleCmdlets[0] -match '@{') {
+                $functionDefinition = Invoke-Expression -Command $visibleCmdlet | ConvertTo-Expression | Out-String
+                $functionDefinition -replace ' ', ''
+            }
+            else {
+                $differenceObjectOrdered.VisibleCmdlets
+            }
         }
     }
 
