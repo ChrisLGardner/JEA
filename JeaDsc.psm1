@@ -1,21 +1,31 @@
 using namespace System.Management.Automation.Language
 
 ## Convert a string representing a Hashtable into a Hashtable
-Function Convert-StringToHashtable($hashtableAsString) {
-    if ($hashtableAsString -eq $null) {
-        $hashtableAsString = '@{}'
+Function Convert-StringToHashtable {
+    param(
+        [Parameter(Mandatory)]
+        [string]$HashtableAsString
+    )
+
+    if ($HashtableAsString -eq $null) {
+        $HashtableAsString = '@{}'
     }
-    $ast = [System.Management.Automation.Language.Parser]::ParseInput($hashtableAsString, [ref] $null, [ref] $null)
+    $ast = [System.Management.Automation.Language.Parser]::ParseInput($HashtableAsString, [ref] $null, [ref] $null)
     $data = $ast.Find( { $args[0] -is [System.Management.Automation.Language.HashtableAst] }, $false )
 
     return [Hashtable] $data.SafeGetValue()
 }
 
 ## Convert a string representing an array of Hashtables
-Function Convert-StringToArrayOfHashtable($literalString) {
+function Convert-StringToArrayOfHashtable {
+    param(
+        [Parameter(Mandatory)]
+        [string]$LiteralString
+    )
+
     $items = @()
 
-    if ($literalString -eq $null) {
+    if ($LiteralString -eq $null) {
         return $items
     }
 
@@ -31,7 +41,7 @@ Function Convert-StringToArrayOfHashtable($literalString) {
         return $false
     }
 
-    $rootAst = [System.Management.Automation.Language.Parser]::ParseInput($literalString, [ref] $null, [ref] $null)
+    $rootAst = [System.Management.Automation.Language.Parser]::ParseInput($LiteralString, [ref] $null, [ref] $null)
     $data = $rootAst.FindAll($predicate, $false)
 
     foreach ($datum in $data) {
@@ -42,28 +52,38 @@ Function Convert-StringToArrayOfHashtable($literalString) {
 }
 
 ## Convert a string representing an array of strings or Hashtables into an array of objects
-Function Convert-StringToArrayOfObject($literalString) {
+function Convert-StringToArrayOfObject {
+    param(
+        [Parameter(Mandatory)]
+        [string]$HashtableAsString
+    )
+
     $items = @()
 
-    if ($literalString -eq $null) {
+    if ($LiteralString -eq $null) {
         return $items
     }
 
-    $items += if ($literalString -like '*@{*') {
-        foreach ($value in $literalString) {
+    $items += if ($LiteralString -like '*@{*') {
+        foreach ($value in $LiteralString) {
             Invoke-Expression -Command $value
         }
     }
     else {
-        $literalString
+        $LiteralString
     }
 
     return $items
 }
 
-Function Convert-ObjectToHashtable($object) {
+Function Convert-ObjectToHashtable {
+    param(
+        [Parameter(Mandatory)]
+        [object]$Object
+    )
+
     $Parameters = @{ }
-    foreach ($Parameter in $object.PSObject.Properties.Where( { $_.Value })) {
+    foreach ($Parameter in $Object.PSObject.Properties.Where( { $_.Value })) {
         $Parameters.Add($Parameter.Name, $Parameter.Value)
     }
 
@@ -81,72 +101,74 @@ Function Compare-JeaConfiguration {
         [hashtable]$DifferenceObject
     )
 
-    $ReferenceObjectordered = [System.Collections.Specialized.OrderedDictionary]@{ }
+    $referenceObjectOrdered = [System.Collections.Specialized.OrderedDictionary]@{ }
     $ReferenceObject.Keys |
     Sort-Object -Descending |
     ForEach-Object {
-        $ReferenceObjectordered.Insert(0, $_, $ReferenceObject["$_"])
+        $referenceObjectOrdered.Insert(0, $_, $ReferenceObject["$_"])
     }
 
-    $DifferenceObjectordered = [System.Collections.Specialized.OrderedDictionary]@{ }
+    $differenceObjectOrdered = [System.Collections.Specialized.OrderedDictionary]@{ }
     $DifferenceObject.Keys |
     Sort-Object -Descending |
     ForEach-Object {
-        $DifferenceObjectordered.Insert(0, $_, $DifferenceObject["$_"])
+        $differenceObjectOrdered.Insert(0, $_, $DifferenceObject["$_"])
     }
 
-    if ($ReferenceObjectordered.FunctionDefinitions) {
-        $ReferenceObjectordered.FunctionDefinitions = foreach ($FunctionDefinition in $ReferenceObjectordered.FunctionDefinitions) {
-            $FunctionDefinition = Invoke-Expression -Command $FunctionDefinition | ConvertTo-Expression | Out-String
-            $FunctionDefinition -replace ' ', ''
+    if ($referenceObjectOrdered.FunctionDefinitions) {
+        $referenceObjectOrdered.FunctionDefinitions = foreach ($functionDefinition in $referenceObjectOrdered.FunctionDefinitions) {
+            $functionDefinition = Invoke-Expression -Command $functionDefinition | ConvertTo-Expression | Out-String
+            $functionDefinition -replace ' ', ''
         }
     }
 
-    if ($DifferenceObjectordered.FunctionDefinitions) {
-        $DifferenceObjectordered.FunctionDefinitions = foreach ($FunctionDefinition in $DifferenceObjectordered.FunctionDefinitions) {
-            $FunctionDefinition = Invoke-Expression -Command $FunctionDefinition | ConvertTo-Expression | Out-String
-            $FunctionDefinition -replace ' ', ''
+    if ($differenceObjectOrdered.FunctionDefinitions) {
+        $differenceObjectOrdered.FunctionDefinitions = foreach ($functionDefinition in $differenceObjectOrdered.FunctionDefinitions) {
+            $functionDefinition = Invoke-Expression -Command $functionDefinition | ConvertTo-Expression | Out-String
+            $functionDefinition -replace ' ', ''
         }
     }
     
-    if ($ReferenceObjectordered.VisibleCmdlets) {
-        $ReferenceObjectordered.VisibleCmdlets = foreach ($visibleCmdlet in $ReferenceObjectordered.VisibleCmdlets) {
-            $FunctionDefinition = Invoke-Expression -Command $VisibleCmdlet | ConvertTo-Expression | Out-String
-            $FunctionDefinition -replace ' ', ''
+    if ($referenceObjectOrdered.VisibleCmdlets) {
+        $referenceObjectOrdered.VisibleCmdlets = foreach ($visibleCmdlet in $referenceObjectOrdered.VisibleCmdlets) {
+            $functionDefinition = Invoke-Expression -Command $VisibleCmdlet | ConvertTo-Expression | Out-String
+            $functionDefinition -replace ' ', ''
         }
     }
 
-    if ($DifferenceObjectordered.VisibleCmdlets) {
-        $DifferenceObjectordered.VisibleCmdlets = foreach ($visibleCmdlet in $DifferenceObjectordered.VisibleCmdlets) {
-            $FunctionDefinition = Invoke-Expression -Command $VisibleCmdlet | ConvertTo-Expression | Out-String
-            $FunctionDefinition -replace ' ', ''
+    if ($differenceObjectOrdered.VisibleCmdlets) {
+        $differenceObjectOrdered.VisibleCmdlets = foreach ($visibleCmdlet in $differenceObjectOrdered.VisibleCmdlets) {
+            $functionDefinition = Invoke-Expression -Command $VisibleCmdlet | ConvertTo-Expression | Out-String
+            $functionDefinition -replace ' ', ''
         }
     }
 
-    if ($ReferenceObjectordered.RoleDefinitions) {
-        $ReferenceObjectordered.RoleDefinitions = foreach ($roleDefinition in $ReferenceObjectordered.RoleDefinitions) {
+    if ($referenceObjectOrdered.RoleDefinitions) {
+        $referenceObjectOrdered.RoleDefinitions = foreach ($roleDefinition in $referenceObjectOrdered.RoleDefinitions) {
             $RoleDefinition = Invoke-Expression -Command $roleDefinition | ConvertTo-Expression | Out-String
             $RoleDefinition -replace ' ', ''
         }
     }
 
-    if ($DifferenceObjectordered.RoleDefinitions) {
-        $DifferenceObjectordered.RoleDefinitions = foreach ($roleDefinition in $DifferenceObjectordered.RoleDefinitions) {
+    if ($differenceObjectOrdered.RoleDefinitions) {
+        $differenceObjectOrdered.RoleDefinitions = foreach ($roleDefinition in $differenceObjectOrdered.RoleDefinitions) {
             $RoleDefinition = Invoke-Expression -Command $roleDefinition | ConvertTo-Expression | Out-String
             $RoleDefinition -replace ' ', ''
         }
     }
 
-    $ReferenceJson = ConvertTo-Json -InputObject $ReferenceObjectordered -Depth 100
-    $DifferenceJson = ConvertTo-Json -InputObject $DifferenceObjectordered -Depth 100
+    $referenceJson = ConvertTo-Json -InputObject $referenceObjectOrdered -Depth 100
+    $differenceJson = ConvertTo-Json -InputObject $differenceObjectOrdered -Depth 100
 
-    if ($ReferenceJson -ne $DifferenceJson) {
+    if ($referenceJson -ne $differenceJson) {
         Write-Verbose "Existing Configuration: $ReferenceJson"
-        Write-Verbose "New COnfiguration: $DifferenceJson"
+        Write-Verbose "New COnfiguration: $differenceJson"
 
         return $false
     }
-
+    else {
+        return $true
+    }
 }
 
 Function ConvertTo-Expression {
@@ -359,7 +381,7 @@ Function ConvertTo-Expression {
                             $LineFeed = $NewLine + ($Tab * $Indent)
                             (Prefix) + "@{$LineFeed$Tab" + (@(ForEach ($Key in $List.get_Keys()) {
                                         If (($List.$Key)[0] -NotMatch '[\S]') { "$Key =$($List.$Key)".TrimEnd() } Else { "$Key = $($List.$Key)".TrimEnd() }
-                                    }) -Join "$LineFeed$Tab") + "$LineFeed}"
+                            }) -Join "$LineFeed$Tab") + "$LineFeed}"
                         }
                     }
                     Else { (Prefix) + ",$List" }
