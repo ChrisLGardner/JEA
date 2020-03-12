@@ -26,7 +26,7 @@ Write-Host 'DNS Management Endpoint' -ForegroundColor Green
     
     JeaRoleCapabilities DnsViewerRoleCapability {
         Path                = 'C:\Program Files\WindowsPowerShell\Modules\DnsAdministration\RoleCapabilities\DnsViewer.psrc'
-        VisibleCmdlets      = "@{ Name = 'DnsServer\Get-*' }"
+        VisibleCmdlets      = 'DnsServer\Get-*'
         VisibleFunctions    = 'Get-DnsServerLog'
         FunctionDefinitions = '@{
             Name = "Get-DnsServerLog"
