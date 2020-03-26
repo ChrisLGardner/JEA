@@ -1,17 +1,19 @@
-enum Ensure {
+enum Ensure
+{
     Present
     Absent
 }
 
 [DscResource()]
-class JeaRoleCapabilities {
+class JeaRoleCapabilities
+{
 
     [DscProperty()]
     [Ensure]$Ensure = [Ensure]::Present
 
     # Where to store the file.
     [DscProperty(Key)]
-    [String]$Path
+    [string]$Path
 
     # Specifies the modules that are automatically imported into sessions that use the role capability file.
     # By default, all of the commands in listed modules are visible. When used with VisibleCmdlets or VisibleFunctions,
@@ -24,27 +26,27 @@ class JeaRoleCapabilities {
     # By default, all aliases that are defined by the Windows PowerShell engine and all aliases that modules export are
     # visible in the session.
     [DscProperty()]
-    [String[]]$VisibleAliases
+    [string[]]$VisibleAliases
 
     # Limits the cmdlets in the session to those specified in the value of this parameter.
     # Wildcard characters and Module Qualified Names are supported.
     [DscProperty()]
-    [String[]]$VisibleCmdlets
+    [string[]]$VisibleCmdlets
 
     #  Limits the functions in the session to those specified in the value of this parameter,
     # plus any functions that you define in the FunctionDefinitions parameter. Wildcard characters are supported.
     [DscProperty()]
-    [String[]]$VisibleFunctions
+    [string[]]$VisibleFunctions
 
     # Limits the external binaries, scripts and commands that can be executed in the session to those specified in
     # the value of this parameter. Wildcard characters are supported.
     [DscProperty()]
-    [String[]]$VisibleExternalCommands
+    [string[]]$VisibleExternalCommands
 
     # Limits the Windows PowerShell providers in the session to those specified in the value of this parameter.
     # Wildcard characters are supported.
     [DscProperty()]
-    [String[]]$VisibleProviders
+    [string[]]$VisibleProviders
 
     # Specifies scripts to add to sessions that use the role capability file.
     [DscProperty()]
@@ -88,26 +90,31 @@ class JeaRoleCapabilities {
     [DscProperty()]
     [string]$AssembliesToLoad
 
-    Hidden [Boolean] ValidatePath() {
+    hidden [boolean] ValidatePath()
+    {
         $FileObject = [System.IO.FileInfo]::new($this.Path)
         Write-Verbose -Message "Validating Path: $($FileObject.Fullname)"
         Write-Verbose -Message "Checking file extension is psrc for: $($FileObject.Fullname)"
-        if ($FileObject.Extension -ne '.psrc') {
+        if ($FileObject.Extension -ne '.psrc')
+        {
             Write-Verbose -Message "Doesn't have psrc extension for: $($FileObject.Fullname)"
             return $false
         }
 
         Write-Verbose -Message "Checking parent forlder is RoleCapabilities for: $($FileObject.Fullname)"
-        if ($FileObject.Directory.Name -ne 'RoleCapabilities') {
+        if ($FileObject.Directory.Name -ne 'RoleCapabilities')
+        {
             Write-Verbose -Message "Parent folder isn't RoleCapabilities for: $($FileObject.Fullname)"
             return $false
         }
 
         Write-Verbose -Message "Checking Folder is in PSModulePath is psrc for: $($FileObject.Fullname)"
         $PSModulePathRegexPattern = (([Regex]::Escape($env:PSModulePath)).TrimStart(';').TrimEnd(';') -replace ';', '|')
-        if ($FileObject.FullName -notmatch $PSModulePathRegexPattern) {
+        if ($FileObject.FullName -notmatch $PSModulePathRegexPattern)
+        {
             Write-Verbose -Message "Path isn't part of PSModulePath, valid values are:"
-            foreach ($path in $env:PSModulePath -split ';') {
+            foreach ($path in $env:PSModulePath -split ';')
+            {
                 Write-Verbose -Message "$Path"
             }
             return $false
@@ -118,20 +125,26 @@ class JeaRoleCapabilities {
         return $true
     }
 
-    [JeaRoleCapabilities] Get() {
+    [JeaRoleCapabilities] Get()
+    {
         $CurrentState = [JeaRoleCapabilities]::new()
         $CurrentState.Path = $this.Path
-        if (Test-Path -Path $this.Path) {
+        if (Test-Path -Path $this.Path)
+        {
             $CurrentStateFile = Import-PowerShellDataFile -Path $this.Path
 
             'Copyright', 'GUID', 'Author', 'CompanyName' | Foreach-Object {
                 $CurrentStateFile.Remove($_)
             }
 
-            foreach ($Property in $CurrentStateFile.Keys) {
-                $CurrentState.$Property = foreach ($propertyValue in $CurrentStateFile[$Property]) {
-                    if ($propertyValue -is [hashtable]) {
-                        if ($propertyValue.ScriptBlock -is [scriptblock]) {
+            foreach ($Property in $CurrentStateFile.Keys)
+            {
+                $CurrentState.$Property = foreach ($propertyValue in $CurrentStateFile[$Property])
+                {
+                    if ($propertyValue -is [hashtable])
+                    {
+                        if ($propertyValue.ScriptBlock -is [scriptblock])
+                        {
                             $code = $propertyValue.ScriptBlock.Ast.Extent.Text
                             $code -match '(?<=\{)(?<Code>((.|\s)*))(?=\})' | Out-Null
                             $propertyValue.ScriptBlock = [scriptblock]::Create($Matches.Code)
@@ -139,60 +152,73 @@ class JeaRoleCapabilities {
                     
                         ConvertTo-Expression -Object $propertyValue
                     }
-                    else {
+                    else
+                    {
                         $propertyValue
                     }
                 }
             }
             $CurrentState.Ensure = [Ensure]::Present
         }
-        else {
+        else
+        {
             $CurrentState.Ensure = [Ensure]::Absent
         }
         return $CurrentState
     }
 
-    [void] Set() {
-        if ($this.Ensure -eq [Ensure]::Present) {
-
+    [void] Set()
+    {
+        if ($this.Ensure -eq [Ensure]::Present)
+        {
             $parameters = Convert-ObjectToHashtable($this)
             $parameters.Remove('Ensure')
 
-            Foreach ($Parameter in $parameters.Keys.Where( { $parameters[$_] -match '@{' })) {
+            foreach ($Parameter in $parameters.Keys.Where( { $parameters[$_] -match '@{' }))
+            {
                 $parameters[$Parameter] = Convert-StringToObject -InputString $parameters[$Parameter]
             }
 
             $invalidConfiguration = $false
 
-            if ($parameters.ContainsKey('FunctionDefinitions')) {
-                foreach ($functionDefName in $parameters['FunctionDefinitions'].Name) {
-                    if ($functionDefName -notin $parameters['VisibleFunctions']) {
+            if ($parameters.ContainsKey('FunctionDefinitions'))
+            {
+                foreach ($functionDefName in $parameters['FunctionDefinitions'].Name)
+                {
+                    if ($functionDefName -notin $parameters['VisibleFunctions'])
+                    {
                         Write-Error -Message "Function defined but not visible to Role Configuration: $functionDefName"
                         $invalidConfiguration = $true
                     }
                 }
             }
-            if (-not $invalidConfiguration) {
+            if (-not $invalidConfiguration)
+            {
                 $null = New-Item -Path $this.Path -ItemType File -Force
 
                 New-PSRoleCapabilityFile @parameters
             }
         }
-        elseif ($this.Ensure -eq [Ensure]::Absent -and (Test-Path -Path $this.Path)) {
+        elseif ($this.Ensure -eq [Ensure]::Absent -and (Test-Path -Path $this.Path))
+        {
             Remove-Item -Path $this.Path -Confirm:$False
         }
 
     }
 
-    [bool] Test() {
-        if (-not ($this.ValidatePath())) {
+    [bool] Test()
+    {
+        if (-not ($this.ValidatePath()))
+        {
             Write-Error -Message "Invalid path specified. It must point to a Module folder, be a psrc file and the parent folder must be called RoleCapabilities"
             return $false
         }
-        if ($this.Ensure -eq [Ensure]::Present -and -not (Test-Path -Path $this.Path)) {
+        if ($this.Ensure -eq [Ensure]::Present -and -not (Test-Path -Path $this.Path))
+        {
             return $false
         }
-        elseif ($this.Ensure -eq [Ensure]::Present -and (Test-Path -Path $this.Path)) {
+        elseif ($this.Ensure -eq [Ensure]::Present -and (Test-Path -Path $this.Path))
+        {
 
             $CurrentState = Convert-ObjectToHashtable -Object $this.Get()
 
@@ -202,10 +228,12 @@ class JeaRoleCapabilities {
 
             return $compare
         }
-        elseif ($this.Ensure -eq [Ensure]::Absent -and (Test-Path -Path $this.Path)) {
+        elseif ($this.Ensure -eq [Ensure]::Absent -and (Test-Path -Path $this.Path))
+        {
             return $false
         }
-        elseif ($this.Ensure -eq [Ensure]::Absent -and -not (Test-Path -Path $this.Path)) {
+        elseif ($this.Ensure -eq [Ensure]::Absent -and -not (Test-Path -Path $this.Path))
+        {
             return $true
         }
 
