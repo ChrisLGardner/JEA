@@ -1,4 +1,5 @@
-Using Module ..\..\JeaDsc.psd1
+<#
+Using Module JeaDsc
 
 Describe "Testing Convert-StringToObject" {
     Context "Test string to hashtable conversion" {
@@ -97,3 +98,4 @@ Describe "Testing Convert-StringToObject" {
     }
 
 }
+#>

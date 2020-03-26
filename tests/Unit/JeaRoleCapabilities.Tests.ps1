@@ -1,3 +1,4 @@
+<#
 Using Module ..\..\JeaDsc.psd1
 
 InModuleScope JeaRoleCapabilities {
@@ -182,3 +183,4 @@ InModuleScope JeaRoleCapabilities {
         }
     }
 }
+#>

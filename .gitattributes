@@ -1,3 +1,11 @@
+# Needed for publishing of examples, build worker defaults to core.autocrlf=input.
+* text eol=crlf
+
+# Ensure any exe files are treated as binary
+*.exe binary
+*.jpg binary
+*.xl* binary
+*.pfx binary
 *.pssc text=auto
 *.pssc diff
 *.psrc text=auto

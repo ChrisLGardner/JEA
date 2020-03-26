@@ -1,4 +1,5 @@
-Using Module ..\..\JeaDsc.psd1
+<#
+Using Module JeaDsc
 
 Describe "Testing Compare-JeaConfiguration" {
 
@@ -364,3 +365,4 @@ Describe "Testing Compare-JeaConfiguration" {
         } -TestCases $TestCases
     }
 }
+#>
