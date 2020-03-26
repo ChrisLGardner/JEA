@@ -36,7 +36,7 @@ function Convert-StringToArrayOfHashtable
     # match single hashtable or array of hashtables
     $predicate = {
         param (
-            [Parameter(Mandatory = $true)]    
+            [Parameter(Mandatory = $true)]
             [System.Management.Automation.Language.Ast]$ast
         )
 
@@ -370,25 +370,25 @@ function ConvertTo-Expression
         [Parameter(Mandatory = $true, ValueFromPipeLine = $true)]
         [Alias('InputObject')]
         [object]$Object,
-        
+
         [Parameter()]
         [int]$Depth = 9,
 
         [Parameter()]
         [int]$Expand = $Depth,
-        
+
         [Parameter()]
         [int]$Indentation = 1,
-        
+
         [Parameter()]
         [string]$IndentChar = "`t",
-        
+
         [Parameter()]
         [switch]$Strong,
-        
+
         [Parameter()]
         [switch]$Explore,
-        
+
         [Parameter()]
         [switch]$Concatenate,
 
@@ -415,10 +415,10 @@ function ConvertTo-Expression
                 [Parameter(Mandatory = $true)]
                 [object]$Object,
 
-                [Parameter(Mandatory = $true)]
+                [Parameter()]
                 $Iteration,
 
-                [Parameter(Mandatory = $true)]
+                [Parameter()]
                 $Indent
             )
             function Quote
@@ -451,7 +451,7 @@ function ConvertTo-Expression
                 param        (
                     [Parameter(Mandatory = $true)]
                     $Object,
-                    
+
                     [Parameter()]
                     $Cast = $Type
                 )
@@ -479,10 +479,10 @@ function ConvertTo-Expression
                     param (
                         [Parameter(Mandatory = $true)]
                         [object]$Object,
-                        
+
                         [Parameter()]
                         [switch]$ListItem,
-                        
+
                         [Parameter()]
                         [switch]$Level
                     )

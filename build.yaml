@@ -8,7 +8,7 @@
 # OutputDirectory: ../output/Sampler
 CopyDirectories:
   - en-US
-  - DSCResources
+  - DSCClassResources
   # - Modules
 Encoding: UTF8 # With BOM in WinPS, noBOM in PSCore.
 
