@@ -35,7 +35,7 @@ Write-Host 'General Server Maintenance Endpoint' -ForegroundColor Green
         'Microsoft.PowerShell.LocalAccounts\Get-*'
         VisibleExternalCommands = 'C:\Windows\System32\gpupdate.exe', 'C:\Windows\System32\gpresult.exe'
     }
-    
+
     JeaRoleCapabilities GeneralLevel2 {
         Path                    = 'C:\Program Files\WindowsPowerShell\Modules\GeneralServerMaintenance\RoleCapabilities\GeneralLevel2.psrc'
         Description             = 'This role capability exposes advanced networking, security, and configuration settings for the local server.'
@@ -65,7 +65,7 @@ Write-Host 'General Server Maintenance Endpoint' -ForegroundColor Green
         'Microsoft.PowerShell.LocalAccounts\Get-*'
         VisibleExternalCommands = 'C:\Windows\System32\gpupdate.exe', 'C:\Windows\System32\gpresult.exe'
     }
-    
+
     JeaRoleCapabilities IisLevel1 {
         Path           = 'C:\Program Files\WindowsPowerShell\Modules\GeneralServerMaintenance\RoleCapabilities\IisLevel1.psrc'
         Description    = 'This role capability enables management of a local IIS server.'
@@ -79,7 +79,7 @@ Write-Host 'General Server Maintenance Endpoint' -ForegroundColor Green
         'Stop-IISSite',
         'Get-IISAppPool'
     }
-    
+
     JeaRoleCapabilities IisLevel2 {
         Path           = 'C:\Program Files\WindowsPowerShell\Modules\GeneralServerMaintenance\RoleCapabilities\IisLevel2.psrc'
         Description    = 'This role capability enables management of a local IIS server and firewall rules.'
@@ -104,7 +104,7 @@ Write-Host 'General Server Maintenance Endpoint' -ForegroundColor Green
         'IISAdministration\Stop-IISSite',
         'NetSecurity\*'
     }
-    
+
     JeaSessionConfiguration GeneralServerMaintenanceEndpoint {
         Name                = 'GeneralServerMaintenance'
         TranscriptDirectory = 'C:\ProgramData\GeneralServerMaintenance\Transcripts'
@@ -119,7 +119,7 @@ Write-Host 'General Server Maintenance Endpoint' -ForegroundColor Green
             'Contoso\Uruguay'    = @{ RoleCapabilities = 'IisLevel1', 'IisLevel2' }
         }"
     }
-    
+
 }
 
 Remove-Item -Path C:\DSC\*
