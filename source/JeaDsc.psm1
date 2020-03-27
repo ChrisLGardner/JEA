@@ -17,6 +17,39 @@ function Convert-StringToHashtable
 
     return [Hashtable] $data.SafeGetValue()
 }
+<#
+#Test for fixing sorting issue
+function Convert-StringToHashtable
+{
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$HashtableAsString
+    )
+
+    if (-not $HashtableAsString)
+    {
+        $HashtableAsString = '@{}'
+    }
+
+    $ast = [System.Management.Automation.Language.Parser]::ParseInput($HashtableAsString, [ref] $null, [ref] $null)
+    $data = $ast.Find( { $args[0] -is [System.Management.Automation.Language.HashtableAst] }, $false )
+
+    if ($data.Parent.Type.TypeName.FullName -eq 'ordered' -or $data.Parent.Type.TypeName.FullName -eq 'System.Collections.Specialized.OrderedDictionary')
+    {
+        $result = [ordered]@{}
+        foreach ($kvp in $data.KeyValuePairs)
+        {
+            $result.Add($kvp.Item1.Value, (Invoke-Expression -Command $kvp.Item2.Extent.Text))
+        }
+    }
+    else
+    {
+        $result = $data.SafeGetValue()
+    }
+
+    return $result
+}
+#>
 
 ## Convert a string representing an array of Hashtables
 function Convert-StringToArrayOfHashtable
