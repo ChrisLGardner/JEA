@@ -85,10 +85,10 @@ class JeaRoleCapabilities
     # Specifies the assemblies to load into the sessions that use the role capability file.
     [DscProperty()]
     [string]$Description
-    
+
     # Description of the role
     [DscProperty()]
-    [string]$AssembliesToLoad
+    [string[]]$AssembliesToLoad
 
     hidden [boolean] ValidatePath()
     {
@@ -127,21 +127,22 @@ class JeaRoleCapabilities
 
     [JeaRoleCapabilities] Get()
     {
-        $CurrentState = [JeaRoleCapabilities]::new()
-        $CurrentState.Path = $this.Path
+        $currentState = [JeaRoleCapabilities]::new()
+        $currentState.Path = $this.Path
         if (Test-Path -Path $this.Path)
         {
-            $CurrentStateFile = Import-PowerShellDataFile -Path $this.Path
+            $currentStateFile = Import-PowerShellDataFile -Path $this.Path
 
             'Copyright', 'GUID', 'Author', 'CompanyName' | Foreach-Object {
-                $CurrentStateFile.Remove($_)
+                $currentStateFile.Remove($_)
             }
 
-            foreach ($Property in $CurrentStateFile.Keys)
+            foreach ($property in $currentStateFile.Keys)
             {
-                $CurrentState.$Property = foreach ($propertyValue in $CurrentStateFile[$Property])
+                $propertyType = ($this | Get-Member -Name $property -MemberType Property).Definition.Split(' ')[0]
+                $currentState.$property = foreach ($propertyValue in $currentStateFile[$property])
                 {
-                    if ($propertyValue -is [hashtable])
+                    if ($propertyValue -is [hashtable] -and $propertyType -ne 'hashtable')
                     {
                         if ($propertyValue.ScriptBlock -is [scriptblock])
                         {
@@ -149,8 +150,12 @@ class JeaRoleCapabilities
                             $code -match '(?<=\{)(?<Code>((.|\s)*))(?=\})' | Out-Null
                             $propertyValue.ScriptBlock = [scriptblock]::Create($Matches.Code)
                         }
-                    
+
                         ConvertTo-Expression -Object $propertyValue
+                    }
+                    elseif ($propertyValue -is [hashtable] -and $propertyType -eq 'hashtable')
+                    {
+                        $propertyValue
                     }
                     else
                     {
@@ -158,50 +163,35 @@ class JeaRoleCapabilities
                     }
                 }
             }
-            $CurrentState.Ensure = [Ensure]::Present
+            $currentState.Ensure = [Ensure]::Present
         }
         else
         {
-            $CurrentState.Ensure = [Ensure]::Absent
+            $currentState.Ensure = [Ensure]::Absent
         }
-        return $CurrentState
+
+        return $currentState
     }
 
     [void] Set()
     {
         if ($this.Ensure -eq [Ensure]::Present)
         {
-            $parameters = Convert-ObjectToHashtable($this)
-            $parameters.Remove('Ensure')
+            $parameters = Convert-ObjectToHashtable -Object $this
 
-            foreach ($Parameter in $parameters.Keys.Where( { $parameters[$_] -match '@{' }))
+            foreach ($parameter in $parameters.Keys.Where( { $parameters[$_] -match '@{' }))
             {
-                $parameters[$Parameter] = Convert-StringToObject -InputString $parameters[$Parameter]
+                $parameters[$parameter] = Convert-StringToObject -InputString $parameters[$parameter]
             }
 
-            $invalidConfiguration = $false
+            $null = New-Item -Path $this.Path -ItemType File -Force
 
-            if ($parameters.ContainsKey('FunctionDefinitions'))
-            {
-                foreach ($functionDefName in $parameters['FunctionDefinitions'].Name)
-                {
-                    if ($functionDefName -notin $parameters['VisibleFunctions'])
-                    {
-                        Write-Error -Message "Function defined but not visible to Role Configuration: $functionDefName"
-                        $invalidConfiguration = $true
-                    }
-                }
-            }
-            if (-not $invalidConfiguration)
-            {
-                $null = New-Item -Path $this.Path -ItemType File -Force
-
-                New-PSRoleCapabilityFile @parameters
-            }
+            $parameters = Sync-Parameter -Command (Get-Command -Name New-PSRoleCapabilityFile) -Parameters $parameters
+            New-PSRoleCapabilityFile @parameters
         }
         elseif ($this.Ensure -eq [Ensure]::Absent -and (Test-Path -Path $this.Path))
         {
-            Remove-Item -Path $this.Path -Confirm:$False
+            Remove-Item -Path $this.Path -Confirm:$false -Force
         }
 
     }
@@ -220,11 +210,26 @@ class JeaRoleCapabilities
         elseif ($this.Ensure -eq [Ensure]::Present -and (Test-Path -Path $this.Path))
         {
 
-            $CurrentState = Convert-ObjectToHashtable -Object $this.Get()
+            $currentState = Convert-ObjectToHashtable -Object $this.Get()
+            $parameters = Convert-ObjectToHashtable -Object $this
 
-            $Parameters = Convert-ObjectToHashtable -Object $this
+            $cmdlet = Get-Command -Name New-PSRoleCapabilityFile
+            $parameters = Sync-Parameter -Command $cmdlet -Parameters $parameters
+            $currentState = Sync-Parameter -Command $cmdlet -Parameters $currentState
+            $propertiesAsObject = $cmdlet.Parameters.Keys |
+            Where-Object { $_ -in $parameters.Keys } |
+            Where-Object { $cmdlet.Parameters.$_.ParameterType.FullName -in 'System.Collections.IDictionary', 'System.Collections.Hashtable', 'System.Collections.IDictionary[]', 'System.Object[]' }
+            foreach ($p in $propertiesAsObject)
+            {
+                if ($cmdlet.Parameters.$p.ParameterType.FullName -in 'System.Collections.Hashtable', 'System.Collections.IDictionary', 'System.Collections.IDictionary[]', 'System.Object[]')
+                {
+                    $parameters."$($p)" = $parameters."$($p)" | Convert-StringToObject
+                    $currentState."$($p)" = $currentState."$($p)" | Convert-StringToObject
 
-            $compare = Compare-JeaConfiguration -ReferenceObject $CurrentState -DifferenceObject $Parameters
+                }
+            }
+
+            $compare = Test-DscParameterState -CurrentValues $currentState -DesiredValues $Parameters -SortArrayValues -TurnOffTypeChecking
 
             return $compare
         }

@@ -21,7 +21,7 @@ class JeaSessionConfiguration
     ## RoleDefinitions = '@{ Everyone = @{ RoleCapabilities = "BaseJeaCapabilities" } }'
     [Dscproperty(Mandatory)]
     [string] $RoleDefinitions
-    
+
     ## run the endpoint under a Virtual Account
     [DscProperty()]
     [bool] $RunAsVirtualAccount
@@ -63,13 +63,13 @@ class JeaSessionConfiguration
     ## property in New-PSSessionConfigurationFile, such as:
     ## RequiredGroups = '@{ And = "RequiredGroup1", @{ Or = "OptionalGroup1", "OptionalGroup2" } }'
     [Dscproperty()]
-    [string] $RequiredGroups
+    [string[]] $RequiredGroups
 
     ## The optional modules to import when applied to a session
     ## This should be a string that represents a string, a Hashtable, or array of strings and/or Hashtables
     ## ModulesToImport = "'MyCustomModule', @{ ModuleName = 'MyCustomModule'; ModuleVersion = '1.0.0.0'; GUID = '4d30d5f0-cb16-4898-812d-f20a6c596bdf' }"
     [Dscproperty()]
-    [string] $ModulesToImport
+    [string[]] $ModulesToImport
 
     ## The optional aliases to make visible when applied to a session
     [Dscproperty()]
@@ -117,7 +117,7 @@ class JeaSessionConfiguration
     ## This should be a string that represents a Hashtable
     ## EnvironmentVariables = "@{ Variable1 = 'Value1'; Variable2 = 'Value2' }"
     [Dscproperty()]
-    [string] $EnvironmentVariables
+    [string[]] $EnvironmentVariables
 
     ## The optional type files (.ps1xml) to load when applied to a session
     [Dscproperty()]
@@ -134,19 +134,19 @@ class JeaSessionConfiguration
     ## The optional number of seconds to wait for registering the endpoint to complete.
     ## 0 for no timeout
     [int] $HungRegistrationTimeout = 10
-    
+
     JeaSessionConfiguration()
     {
         if (-not $this.SessionType)
         {
             $this.SessionType = 'RestrictedRemoteServer'
         }
-        
+
         if ($this.RunAsVirtualAccountGroups -and $this.GroupManagedServiceAccount)
         {
             throw "The RunAsVirtualAccountGroups setting can not be used when a configuration is set to run as a Group Managed Service Account"
         }
-        
+
         if ($this.GroupManagedServiceAccount -and $this.RunAsVirtualAccount)
         {
             throw "The properties 'GroupManagedServiceAccount' and 'RunAsVirtualAccount' cannot be used together."
@@ -165,170 +165,17 @@ class JeaSessionConfiguration
         $ErrorActionPreference = 'Stop'
 
         $psscPath = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName() + ".pssc")
-        $configurationFileArguments = @{
-            Path        = $psscPath
-            SessionType = $this.SessionType
-        }
 
-        $Parameters = Convert-ObjectToHashtable($this)
-        $Parameters.Remove('Ensure')
-        $Parameters.Remove('HungRegistrationTimeout')
-        $Parameters.Remove('Name')
-        $Parameters.Add('Path', $psscPath)
+        $parameters = Convert-ObjectToOrderedDictionary -Object $this
+        $parameters.Add('Path', $psscPath)
 
         if ($this.Ensure -eq [Ensure]::Present)
         {
-            foreach ($Parameter in $Parameters.Keys.Where( { $Parameters[$_] -match '@{' }))
+            foreach ($parameter in $parameters.Keys.Where( { $parameters[$_] -match '@{' }))
             {
-                $Parameters[$Parameter] = Convert-StringToObject -InputString $Parameters[$Parameter]
+                $parameters[$parameter] = Convert-StringToObject -InputString $parameters[$parameter]
             }
 
-            ## Convert the RoleDefinitions string to the actual hashtable
-            $configurationFileArguments["RoleDefinitions"] = Convert-StringToHashtable -HashtableAsString $this.RoleDefinitions
-
-            ## Set up the JEA identity            
-            if ($this.RunAsVirtualAccount)
-            {
-                $configurationFileArguments['RunAsVirtualAccount'] = $true
-            }
-
-            if ($this.RunAsVirtualAccountGroups)
-            {
-                $configurationFileArguments["RunAsVirtualAccount"] = $true
-                $configurationFileArguments["RunAsVirtualAccountGroups"] = $this.RunAsVirtualAccountGroups
-            }
-            elseif ($this.GroupManagedServiceAccount)
-            {
-                $configurationFileArguments["GroupManagedServiceAccount"] = $this.GroupManagedServiceAccount -replace '\$$', ''
-            }
-            else
-            {
-                $configurationFileArguments["RunAsVirtualAccount"] = $true
-            }
-
-            ## Transcripts
-            if ($this.TranscriptDirectory)
-            {
-                $configurationFileArguments["TranscriptDirectory"] = $this.TranscriptDirectory
-            }
-
-            ## SessionType
-            if ($this.SessionType)
-            {
-                $configurationFileArguments["SessionType"] = $this.SessionType
-            }
-
-            ## Startup scripts
-            if ($this.ScriptsToProcess)
-            {
-                $configurationFileArguments["ScriptsToProcess"] = $this.ScriptsToProcess
-            }
-
-            ## Mount user drive
-            if ($this.MountUserDrive)
-            {
-                $configurationFileArguments["MountUserDrive"] = $this.MountUserDrive
-            }
-
-            ## User drive maximum size
-            if ($this.UserDriveMaximumSize)
-            {
-                $configurationFileArguments["UserDriveMaximumSize"] = $this.UserDriveMaximumSize
-                $configurationFileArguments["MountUserDrive"] = $true
-            }
-
-            ## Required groups
-            if ($this.RequiredGroups)
-            {
-                ## Convert the RequiredGroups string to the actual Hashtable
-                $requiredGroupsHash = Convert-StringToHashtable -HashtableAsString $this.RequiredGroups
-                $configurationFileArguments["RequiredGroups"] = $requiredGroupsHash
-            }
-
-            ## Modules to import
-            if ($this.ModulesToImport)
-            {
-                $configurationFileArguments["ModulesToImport"] = Convert-StringToArrayOfObject -LiteralString $this.ModulesToImport
-            }
-
-            ## Visible aliases
-            if ($this.VisibleAliases)
-            {
-                $configurationFileArguments["VisibleAliases"] = $this.VisibleAliases
-            }
-
-            ## Visible cmdlets
-            if ($this.VisibleCmdlets)
-            {
-                Write-Verbose "VisibleCmdlets: $($this.VisibleCmdlets)"
-                $configurationFileArguments["VisibleCmdlets"] = Convert-StringToArrayOfObject -LiteralString $this.VisibleCmdlets
-            }
-
-            ## Visible functions
-            if ($this.VisibleFunctions)
-            {
-                $configurationFileArguments["VisibleFunctions"] = Convert-StringToArrayOfObject -LiteralString $this.VisibleFunctions
-            }
-
-            ## Visible external commands
-            if ($this.VisibleExternalCommands)
-            {
-                $configurationFileArguments["VisibleExternalCommands"] = $this.VisibleExternalCommands
-            }
-
-            ## Visible providers
-            if ($this.VisibleProviders)
-            {
-                $configurationFileArguments["VisibleProviders"] = $this.VisibleProviders
-            }
-
-            ## Visible providers
-            if ($this.VisibleProviders)
-            {
-                $configurationFileArguments["VisibleProviders"] = $this.VisibleProviders
-            }
-
-            ## Alias definitions
-            if ($this.AliasDefinitions)
-            {
-                $configurationFileArguments["AliasDefinitions"] = Convert-StringToArrayOfHashtable -LiteralString $this.AliasDefinitions
-            }
-
-            ## Function definitions
-            if ($this.FunctionDefinitions)
-            {
-                $configurationFileArguments["FunctionDefinitions"] = Convert-StringToArrayOfHashtable -LiteralString $this.FunctionDefinitions
-            }
-
-            ## Variable definitions
-            if ($this.VariableDefinitions)
-            {
-                $configurationFileArguments["VariableDefinitions"] = Convert-StringToArrayOfHashtable -LiteralString $this.VariableDefinitions
-            }
-
-            ## Environment variables
-            if ($this.EnvironmentVariables)
-            {
-                $configurationFileArguments["EnvironmentVariables"] = Convert-StringToHashtable -HashtableAsString $this.EnvironmentVariables
-            }
-
-            ## Types to process
-            if ($this.TypesToProcess)
-            {
-                $configurationFileArguments["TypesToProcess"] = $this.TypesToProcess
-            }
-
-            ## Formats to process
-            if ($this.FormatsToProcess)
-            {
-                $configurationFileArguments["FormatsToProcess"] = $this.FormatsToProcess
-            }
-
-            ## Assemblies to load
-            if ($this.AssembliesToLoad)
-            {
-                $configurationFileArguments["AssembliesToLoad"] = $this.AssembliesToLoad
-            }
         }
 
         ## Register the endpoint
@@ -353,8 +200,9 @@ class JeaSessionConfiguration
             if ($this.Ensure -eq [Ensure]::Present)
             {
                 ## Create the configuration file
-                $r = @{ }
-                New-PSSessionConfigurationFile @configurationFileArguments #-RoleDefinitions $r
+                $parameters = Sync-Parameter -Command (Get-Command -Name New-PSSessionConfigurationFile) -Parameters $parameters
+                New-PSSessionConfigurationFile @parameters
+
                 ## Register the configuration file
                 $this.RegisterPSSessionConfiguration($this.Name, $psscPath, $this.HungRegistrationTimeout)
 
@@ -377,6 +225,7 @@ class JeaSessionConfiguration
     [bool] Test()
     {
         $currentState = Convert-ObjectToHashtable -Object $this.Get()
+        $parameters = Convert-ObjectToHashtable -Object $this
 
         # short-circuit if the resource is not present and is not supposed to be present
         if ($this.Ensure -eq [Ensure]::Absent)
@@ -396,57 +245,26 @@ class JeaSessionConfiguration
             return $false
         }
 
-        $parameters = Convert-ObjectToHashtable -Object $this
-        $parameters.Remove('HungRegistrationTimeout')
-        $currentState.Remove('HungRegistrationTimeout')
+        $cmdlet = Get-Command -Name New-PSSessionConfigurationFile
+        $parameters = Sync-Parameter -Command $cmdlet -Parameters $parameters
+        $propertiesAsObject = $cmdlet.Parameters.Keys |
+        Where-Object { $_ -in $parameters.Keys } |
+        Where-Object { $cmdlet.Parameters.$_.ParameterType.FullName -in 'System.Collections.IDictionary', 'System.Collections.Hashtable' }
+        foreach ($p in $propertiesAsObject)
+        {
+            if ($cmdlet.Parameters.$p.ParameterType.FullName -in 'System.Collections.Hashtable', 'System.Collections.IDictionary')
+            {
+                $parameters."$($p)" = $this."$($p)" | Convert-StringToHashtable
+                $currentState."$($p)" = $currentState."$($p)" | Convert-StringToHashtable
+            }
+        }
 
-        $compare = Compare-JeaConfiguration -ReferenceObject $currentState -DifferenceObject $parameters
+        #$parameters.Remove('HungRegistrationTimeout')
+        #$currentState.Remove('HungRegistrationTimeout')
+
+        $compare = Test-DscParameterState -CurrentValues $currentState -DesiredValues $parameters -TurnOffTypeChecking -SortArrayValues
 
         return $compare
-    }
-
-    ## A simple comparison for complex objects used in JEA configurations.
-    ## We don't need anything extensive, as we should be the only ones changing them.
-    hidden [bool] ComplexObjectsEqual($object1, $object2)
-    {
-        if ($object1.Count -ne $object2.Count)
-        {
-            return $false
-        }
-
-        if ($object1 -isnot [System.Array])
-        {
-            $object1 = @($object1)
-        }
-        if ($object2 -isnot [System.Array])
-        {
-            $object2 = @($object2)
-        }
-
-        for ($i = 0; $i -lt $object1.Count; $i++)
-        {
-            $object1ordered = [System.Collections.Specialized.OrderedDictionary]@{ }
-            $object1[$i].Keys | Sort-Object -Descending | ForEach-Object { $object1ordered.Insert(0, $_, $object1[$i]["$_"]) }
-
-            $object2ordered = [System.Collections.Specialized.OrderedDictionary]@{ }
-            $object2[$i].Keys | Sort-Object -Descending | ForEach-Object { $object2ordered.Insert(0, $_, $object2[$i]["$_"]) }
-
-            $json1 = ConvertTo-Json -InputObject $object1ordered -Depth 100
-            $json2 = ConvertTo-Json -InputObject $object2ordered -Depth 100
-
-            if ($json1 -ne $json2)
-            {
-                Write-Verbose "object1: $json1"
-                Write-Verbose "object2: $json2"
-            }
-
-            if ($json1 -ne $json2)
-            {
-                return $false
-            }
-        }
-
-        return $true
     }
 
     ## Get a PS Session Configuration based on its name
@@ -460,7 +278,7 @@ class JeaSessionConfiguration
             $Global:VerbosePreference = 'SilentlyContinue'
             $PSSessionConfiguration = Get-PSSessionConfiguration -Name $Name -ErrorAction 'SilentlyContinue'
             $Global:VerbosePreference = $VerbosePreferenceBackup
-            
+
             if ($PSSessionConfiguration)
             {
                 return $PSSessionConfiguration
@@ -609,13 +427,14 @@ class JeaSessionConfiguration
 
         'Copyright', 'GUID', 'Author', 'CompanyName', 'SchemaVersion' | Foreach-Object {
             $configFile.Remove($_)
-        }  
+        }
 
-        foreach ($Property in $configFile.Keys)
+        foreach ($property in $configFile.Keys)
         {
-            $currentState.$Property = foreach ($propertyValue in $configFile[$Property])
+            $propertyType = ($this | Get-Member -Name $property -MemberType Property).Definition.Split(' ')[0]
+            $currentState.$property = foreach ($propertyValue in $configFile[$property])
             {
-                if ($propertyValue -is [hashtable])
+                if ($propertyValue -is [hashtable] -and $propertyType -ne 'hashtable')
                 {
                     if ($propertyValue.ScriptBlock -is [scriptblock])
                     {
@@ -625,6 +444,10 @@ class JeaSessionConfiguration
                     }
 
                     ConvertTo-Expression -Object $propertyValue
+                }
+                elseif ($propertyValue -is [hashtable] -and $propertyType -eq 'hashtable')
+                {
+                    $propertyValue
                 }
                 else
                 {

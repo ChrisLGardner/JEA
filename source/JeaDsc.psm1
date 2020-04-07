@@ -125,18 +125,55 @@ function Convert-StringToArrayOfObject
 
 function Convert-ObjectToHashtable
 {
+    [OutputType([hashtable])]
     param (
         [Parameter(Mandatory = $true)]
         [object]$Object
     )
 
-    $parameters = @{ }
-    foreach ($parameter in $Object.PSObject.Properties.Where( { $_.Value }))
+    $hashtable = [ordered]@{}
+    foreach ($property in $Object.PSObject.Properties.Where( { $_.Value }))
     {
-        $parameters.Add($parameter.Name, $parameter.Value)
+        $hashtable.Add($property.Name, $property.Value)
     }
 
-    return $parameters
+    return $hashtable
+}
+
+function Convert-ObjectToOrderedDictionary
+{
+    [OutputType([System.Collections.Specialized.OrderedDictionary])]
+    param (
+        [Parameter(Mandatory = $true)]
+        [object]$Object
+    )
+
+    $hashtable = Convert-ObjectToHashtable -Object $Object
+    $ordered = ConvertTo-OrderedDictionary -Hashtable $hashtable
+    return $ordered
+}
+
+function ConvertTo-OrderedDictionary
+{
+    [CmdletBinding()]
+    [OutputType([System.Collections.Specialized.OrderedDictionary])]
+    param (
+        [Parameter(Mandatory = $true)]
+        [hashtable]$Hashtable,
+
+        [Parameter()]
+        [switch]$Descending
+    )
+
+    $ordered = [ordered]@{}
+
+    $Hashtable.Keys |
+    Sort-Object -Descending:$Descending |
+    ForEach-Object {
+        $ordered.Add($_, $Hashtable["$_"])
+    }
+
+    $ordered
 }
 
 function Compare-JeaConfiguration

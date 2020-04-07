@@ -24,11 +24,14 @@
     FunctionsToExport    = @(
         'Compare-JeaConfiguration'
         'Convert-ObjectToHashtable'
+        'Convert-ObjectToOrderedDictionary'
         'Convert-StringToObject'
         'Convert-StringToHashtable'
         'Convert-StringToArrayOfObject'
         'Convert-StringToArrayOfHashtable'
         'ConvertTo-Expression'
+        'ConvertTo-OrderedDictionary'
+
     )
 
     CmdletsToExport      = @()
@@ -46,15 +49,15 @@
 
         PSData = @{
 
-            Tags       = @('DesiredStateConfiguration', 'DSC', 'DSCResource', 'JEA', 'JustEnoughAdministration')
+            Tags         = @('DesiredStateConfiguration', 'DSC', 'DSCResource', 'JEA', 'JustEnoughAdministration')
 
-            LicenseUri = 'https://github.com/dsccommunity/JeaDsc/blob/master/LICENSE'
+            LicenseUri   = 'https://github.com/dsccommunity/JeaDsc/blob/master/LICENSE'
 
-            ProjectUri = 'https://github.com/dsccommunity/JeaDsc'
+            ProjectUri   = 'https://github.com/dsccommunity/JeaDsc'
 
-            IconUri    = 'https://dsccommunity.org/images/DSC_Logo_300p.png'
+            IconUri      = 'https://dsccommunity.org/images/DSC_Logo_300p.png'
 
-            Prerelease = 'sampler0001'
+            Prerelease   = 'sampler0001'
 
             ReleaseNotes = '## [0.91.0-sampler0001] - 2020-03-25
 
@@ -88,6 +91,3 @@
 
     }
 }
-
-
-
