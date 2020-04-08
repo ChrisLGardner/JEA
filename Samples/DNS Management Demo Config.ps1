@@ -2,7 +2,8 @@ Configuration DnsAdmin
 {
     Import-DscResource -Module JeaDsc
 
-    File StartupScript {
+    File StartupScript
+    {
         DestinationPath = 'C:\ProgramData\DnsManagementEndpoint\Startup.ps1'
         Contents        = @'
 Write-Host 'DNS Management Endpoint' -ForegroundColor Green
@@ -12,19 +13,21 @@ Write-Host 'DNS Management Endpoint' -ForegroundColor Green
         Force           = $true
     }
 
-    JeaRoleCapabilities DnsAdminRoleCapability {
+    JeaRoleCapabilities DnsAdminRoleCapability
+    {
         Path           = 'C:\Program Files\WindowsPowerShell\Modules\DnsAdministration\RoleCapabilities\DnsAdmin.psrc'
         VisibleCmdlets = "@{
-            Name = 'Restart-Service'
+            Name       = 'Restart-Service'
             Parameters = @{
-                Name = 'Name'
+                Name        = 'Name'
                 ValidateSet = 'Dns'
             }
         }"
         Description    = 'DnsAdmin demo role capability file'
     }
 
-    JeaRoleCapabilities DnsViewerRoleCapability {
+    JeaRoleCapabilities DnsViewerRoleCapability
+    {
         Path                = 'C:\Program Files\WindowsPowerShell\Modules\DnsAdministration\RoleCapabilities\DnsViewer.psrc'
         VisibleCmdlets      = 'DnsServer\Get-*'
         VisibleFunctions    = 'Get-DnsServerLog'
@@ -35,10 +38,11 @@ Write-Host 'DNS Management Endpoint' -ForegroundColor Green
         Description         = 'DnsViewer demo role capability file'
     }
 
-    JeaSessionConfiguration DnsManagementEndpoint {
+    JeaSessionConfiguration DnsManagementEndpoint
+    {
         Name                = 'DnsManagement'
         RoleDefinitions     = "@{
-            'Contoso\DnsAdmins' = @{ RoleCapabilities = 'DnsAdmin' }
+            'Contoso\DnsAdmins'    = @{ RoleCapabilities = 'DnsAdmin' }
             'Contoso\Domain Users' = @{ RoleCapabilities = 'DnsViewer' }
         }"
         TranscriptDirectory = 'C:\ProgramData\DnsManagementEndpoint\Transcripts'
