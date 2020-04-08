@@ -4,52 +4,23 @@ using namespace System.Management.Automation.Language
 function Convert-StringToHashtable
 {
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]$HashtableAsString
     )
 
-    if ($HashtableAsString -eq $null)
+    process
     {
-        $HashtableAsString = '@{}'
-    }
-    $ast = [System.Management.Automation.Language.Parser]::ParseInput($HashtableAsString, [ref] $null, [ref] $null)
-    $data = $ast.Find( { $args[0] -is [System.Management.Automation.Language.HashtableAst] }, $false )
-
-    return [Hashtable] $data.SafeGetValue()
-}
-<#
-#Test for fixing sorting issue
-function Convert-StringToHashtable
-{
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$HashtableAsString
-    )
-
-    if (-not $HashtableAsString)
-    {
-        $HashtableAsString = '@{}'
-    }
-
-    $ast = [System.Management.Automation.Language.Parser]::ParseInput($HashtableAsString, [ref] $null, [ref] $null)
-    $data = $ast.Find( { $args[0] -is [System.Management.Automation.Language.HashtableAst] }, $false )
-
-    if ($data.Parent.Type.TypeName.FullName -eq 'ordered' -or $data.Parent.Type.TypeName.FullName -eq 'System.Collections.Specialized.OrderedDictionary')
-    {
-        $result = [ordered]@{}
-        foreach ($kvp in $data.KeyValuePairs)
+        if ($HashtableAsString -eq $null)
         {
-            $result.Add($kvp.Item1.Value, (Invoke-Expression -Command $kvp.Item2.Extent.Text))
+            $HashtableAsString = '@{}'
         }
-    }
-    else
-    {
-        $result = $data.SafeGetValue()
-    }
+        $ast = [System.Management.Automation.Language.Parser]::ParseInput($HashtableAsString, [ref] $null, [ref] $null)
+        $data = $ast.Find( { $args[0] -is [System.Management.Automation.Language.HashtableAst] }, $false )
 
-    return $result
+        [hashtable] $data.SafeGetValue()
+    }
 }
-#>
+
 
 ## Convert a string representing an array of Hashtables
 function Convert-StringToArrayOfHashtable
@@ -127,17 +98,21 @@ function Convert-ObjectToHashtable
 {
     [OutputType([hashtable])]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object]$Object
     )
 
-    $hashtable = [ordered]@{}
-    foreach ($property in $Object.PSObject.Properties.Where( { $_.Value }))
+    process
     {
-        $hashtable.Add($property.Name, $property.Value)
-    }
+        $hashtable = @{}
 
-    return $hashtable
+        foreach ($property in $Object.PSObject.Properties.Where({ $_.Value -ne $null }))
+        {
+            $hashtable.Add($property.Name, $property.Value)
+        }
+
+        $hashtable
+    }
 }
 
 function Convert-ObjectToOrderedDictionary
@@ -149,7 +124,7 @@ function Convert-ObjectToOrderedDictionary
     )
 
     $hashtable = Convert-ObjectToHashtable -Object $Object
-    $ordered = ConvertTo-OrderedDictionary -Hashtable $hashtable
+    $ordered = $hashtable | ConvertTo-OrderedDictionary
     return $ordered
 }
 
@@ -158,119 +133,113 @@ function ConvertTo-OrderedDictionary
     [CmdletBinding()]
     [OutputType([System.Collections.Specialized.OrderedDictionary])]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [hashtable]$Hashtable,
 
         [Parameter()]
         [switch]$Descending
     )
 
-    $ordered = [ordered]@{}
-
-    $Hashtable.Keys |
-    Sort-Object -Descending:$Descending |
-    ForEach-Object {
-        $ordered.Add($_, $Hashtable["$_"])
+    begin
+    {
+        $ordered = [ordered]@{}
     }
 
-    $ordered
+    process
+    {
+        $Hashtable.Keys |
+        Sort-Object -Descending:$Descending |
+        ForEach-Object {
+            $ordered.Add($_, $Hashtable["$_"])
+        }
+    }
+    end
+    {
+        $ordered
+    }
 }
 
 function Compare-JeaConfiguration
 {
-    [cmdletbinding()]
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
-        [hashtable]$ReferenceObject,
+        [System.Collections.Specialized.OrderedDictionary]$ReferenceObject,
 
         [Parameter(Mandatory = $true)]
-        [hashtable]$DifferenceObject
+        [System.Collections.Specialized.OrderedDictionary]$DifferenceObject
     )
 
-    $referenceObjectOrdered = [System.Collections.Specialized.OrderedDictionary]@{ }
-    $ReferenceObject.Keys |
-    Sort-Object -Descending |
-    ForEach-Object {
-        $referenceObjectOrdered.Insert(0, $_, $ReferenceObject["$_"])
-    }
-
-    $differenceObjectOrdered = [System.Collections.Specialized.OrderedDictionary]@{ }
-    $DifferenceObject.Keys |
-    Sort-Object -Descending |
-    ForEach-Object {
-        $differenceObjectOrdered.Insert(0, $_, $DifferenceObject["$_"])
-    }
-
-    if ($referenceObjectOrdered.functionDefinitions)
+    if ($ReferenceObject.functionDefinitions)
     {
-        $referenceObjectOrdered.functionDefinitions = foreach ($functionDefinition in $referenceObjectOrdered.functionDefinitions)
+        $ReferenceObject.functionDefinitions = foreach ($functionDefinition in $ReferenceObject.functionDefinitions)
         {
-            $functionDefinition = Invoke-Expression -Command $functionDefinition | ConvertTo-Expression | Out-String
+            $functionDefinition = Invoke-Expression -Command $functionDefinition | ConvertTo-OrderedDictionary | ConvertTo-Expression | Out-String
             $functionDefinition -replace ' ', ''
         }
     }
 
-    if ($differenceObjectOrdered.functionDefinitions)
+    if ($DifferenceObject.functionDefinitions)
     {
-        $differenceObjectOrdered.functionDefinitions = foreach ($functionDefinition in $differenceObjectOrdered.functionDefinitions)
+        $DifferenceObject.functionDefinitions = foreach ($functionDefinition in $DifferenceObject.functionDefinitions)
         {
-            $functionDefinition = Invoke-Expression -Command $functionDefinition | ConvertTo-Expression | Out-String
+            $functionDefinition = Invoke-Expression -Command $functionDefinition | ConvertTo-OrderedDictionary | ConvertTo-Expression | Out-String
             $functionDefinition -replace ' ', ''
         }
     }
 
-    if ($referenceObjectOrdered.VisibleCmdlets)
+    if ($ReferenceObject.VisibleCmdlets)
     {
-        $referenceObjectOrdered.VisibleCmdlets = foreach ($visibleCmdlet in $referenceObjectOrdered.VisibleCmdlets)
+        $ReferenceObject.VisibleCmdlets = foreach ($visibleCmdlet in $ReferenceObject.VisibleCmdlets)
         {
-            if ($referenceObjectOrdered.VisibleCmdlets[0] -match '@{')
+            if ($ReferenceObject.VisibleCmdlets[0] -match '@{')
             {
-                $functionDefinition = Invoke-Expression -Command $visibleCmdlet | ConvertTo-Expression | Out-String
+                $functionDefinition = Invoke-Expression -Command $visibleCmdlet | ConvertTo-OrderedDictionary | ConvertTo-Expression | Out-String
                 $functionDefinition -replace ' ', ''
             }
             else
             {
-                $referenceObjectOrdered.VisibleCmdlets
+                $ReferenceObject.VisibleCmdlets
             }
         }
     }
 
-    if ($differenceObjectOrdered.VisibleCmdlets)
+    if ($DifferenceObject.VisibleCmdlets)
     {
-        $differenceObjectOrdered.VisibleCmdlets = foreach ($visibleCmdlet in $differenceObjectOrdered.VisibleCmdlets)
+        $DifferenceObject.VisibleCmdlets = foreach ($visibleCmdlet in $DifferenceObject.VisibleCmdlets)
         {
-            if ($differenceObjectOrdered.VisibleCmdlets[0] -match '@{')
+            if ($DifferenceObject.VisibleCmdlets[0] -match '@{')
             {
-                $functionDefinition = Invoke-Expression -Command $visibleCmdlet | ConvertTo-Expression | Out-String
+                $functionDefinition = Invoke-Expression -Command $visibleCmdlet | ConvertTo-OrderedDictionary | ConvertTo-Expression | Out-String
                 $functionDefinition -replace ' ', ''
             }
             else
             {
-                $differenceObjectOrdered.VisibleCmdlets
+                $DifferenceObject.VisibleCmdlets
             }
         }
     }
 
-    if ($referenceObjectOrdered.RoleDefinitions)
+    if ($ReferenceObject.RoleDefinitions)
     {
-        $referenceObjectOrdered.RoleDefinitions = foreach ($roleDefinition in $referenceObjectOrdered.RoleDefinitions)
+        $ReferenceObject.RoleDefinitions = foreach ($roleDefinition in $ReferenceObject.RoleDefinitions)
         {
-            $RoleDefinition = Invoke-Expression -Command $roleDefinition | ConvertTo-Expression | Out-String
-            $RoleDefinition -replace ' ', ''
+            $roleDefinition = Invoke-Expression -Command $roleDefinition | ConvertTo-OrderedDictionary | ConvertTo-Expression | Out-String
+            $roleDefinition -replace ' ', ''
         }
     }
 
-    if ($differenceObjectOrdered.RoleDefinitions)
+    if ($DifferenceObject.RoleDefinitions)
     {
-        $differenceObjectOrdered.RoleDefinitions = foreach ($roleDefinition in $differenceObjectOrdered.RoleDefinitions)
+        $DifferenceObject.RoleDefinitions = foreach ($roleDefinition in $DifferenceObject.RoleDefinitions)
         {
-            $RoleDefinition = Invoke-Expression -Command $roleDefinition | ConvertTo-Expression | Out-String
-            $RoleDefinition -replace ' ', ''
+            $roleDefinition = Invoke-Expression -Command $roleDefinition | ConvertTo-OrderedDictionary | ConvertTo-Expression | Out-String
+            $roleDefinition -replace ' ', ''
         }
     }
 
-    $referenceJson = ConvertTo-Json -InputObject $referenceObjectOrdered -Depth 100
-    $differenceJson = ConvertTo-Json -InputObject $differenceObjectOrdered -Depth 100
+    $referenceJson = ConvertTo-Json -InputObject $ReferenceObject -Depth 100
+    $differenceJson = ConvertTo-Json -InputObject $DifferenceObject -Depth 100
 
     if ($referenceJson -ne $differenceJson)
     {
@@ -590,7 +559,7 @@ function ConvertTo-Expression
                             $list = @(foreach ($item in $Object)
                                 {
                                     Iterate -Object $item -ListItem -Level:($Count -eq 1 -or ($null -eq $Indent -and -not $Explore -and -not $Strong))
-                                })
+                            })
                         }
                     }
                     else
@@ -694,14 +663,14 @@ function ConvertTo-Expression
                             (Prefix) + '@{' + (@(foreach ($key in $list.get_Keys())
                                     {
                                         "$key=$($list.$key)"
-                                    }) -Join ';') + '}'
+                            }) -Join ';') + '}'
                         }
                         elseif ($list.Count -eq 1 -or $Indent -ge $Expand - 1)
                         {
                             (Prefix) + '@{' + (@(foreach ($key in $list.get_Keys())
                                     {
                                         "$key = $($list.$key)"
-                                    }) -Join '; ') + '}'
+                            }) -Join '; ') + '}'
                         }
                         else
                         {
@@ -716,7 +685,7 @@ function ConvertTo-Expression
                                         {
                                             "$key = $($list.$key)".TrimEnd()
                                         }
-                                    }) -Join "$lineFeed$tab") + "$lineFeed}"
+                            }) -Join "$lineFeed$tab") + "$lineFeed}"
                         }
                     }
                     else
@@ -848,79 +817,589 @@ function Convert-StringToObject
 {
     [cmdletbinding()]
     param (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string[]]$InputString
     )
 
-    foreach ($string in $InputString)
+    process
     {
-        $parseErrors = @()
-        $fakeCommand = "Totally-NotACmdlet -Fakeparameter $string"
-        $ast = [Parser]::ParseInput($fakeCommand, [ref]$null, [ref]$parseErrors)
-        if (-not $parseErrors)
+        foreach ($string in $InputString)
         {
-            # Use Ast.Find() to locate the CommandAst parsed from our fake command
-            $cmdAst = $ast.Find( {
-                    param (
-                        [Parameter(Mandatory = $true)]
-                        [System.Management.Automation.Language.Ast]$ChildAst
-                    )
-                    $ChildAst -is [CommandAst]
-                }
-                , $false
-            )
-            # Grab the user-supplied arguments (index 0 is the command name, 1 is our fake parameter)
-            $allArgumentAst = $cmdAst.CommandElements.Where( { $_ -isnot [CommandparameterAst] -and $_.Value -ne 'Totally-NotACmdlet' })
-            foreach ($argumentAst in $allArgumentAst)
+            $parseErrors = @()
+            $fakeCommand = "Totally-NotACmdlet -Fakeparameter $string"
+            $ast = [Parser]::ParseInput($fakeCommand, [ref]$null, [ref]$parseErrors)
+            if (-not $parseErrors)
             {
-                if ($argumentAst -is [ArrayLiteralAst])
-                {
-                    # Argument was a list
-                    foreach ($element in $argumentAst.Elements)
-                    {
-                        if ($element.StaticType.Name -eq 'String')
-                        {
-                            $element.value
-                        }
-                        if ($element.StaticType.Name -eq 'Hashtable')
-                        {
-                            [Hashtable]$element.SafeGetValue()
-                        }
+                # Use Ast.Find() to locate the CommandAst parsed from our fake command
+                $cmdAst = $ast.Find( {
+                        param (
+                            [Parameter(Mandatory = $true)]
+                            [System.Management.Automation.Language.Ast]$ChildAst
+                        )
+                        $ChildAst -is [CommandAst]
                     }
-                }
-                else
+                    , $false
+                )
+                # Grab the user-supplied arguments (index 0 is the command name, 1 is our fake parameter)
+                $allArgumentAst = $cmdAst.CommandElements.Where( { $_ -isnot [CommandparameterAst] -and $_.Value -ne 'Totally-NotACmdlet' })
+                foreach ($argumentAst in $allArgumentAst)
                 {
-                    if ($argumentAst -is [HashtableAst])
+                    if ($argumentAst -is [ArrayLiteralAst])
                     {
-                        $ht = [Hashtable]$argumentAst.SafeGetValue()
-                        for ($i = 1; $i -lt $ht.Keys.Count; $i++)
+                        # Argument was a list
+                        foreach ($element in $argumentAst.Elements)
                         {
-                            $value = $ht[([array]$ht.Keys)[$i]]
-                            if ($value -is [scriptblock])
+                            if ($element.StaticType.Name -eq 'String')
                             {
-                                $scriptBlockText = $value.Ast.Extent.Text
-
-                                if ($scriptBlockText[$value.Ast.Extent.StartOffset] -eq '{' -and $scriptBlockText[$endOffset - 1] -eq '}')
-                                {
-                                    $scriptBlockText = $scriptBlockText.Substring(0, $scriptBlockText.Length - 1)
-                                    $scriptBlockText = $scriptBlockText.Substring(1, $scriptBlockText.Length - 1)
-                                }
-
-                                $ht[([array]$ht.Keys)[$i]] = [scriptblock]::Create($scriptBlockText)
+                                $element.value
+                            }
+                            if ($element.StaticType.Name -eq 'Hashtable')
+                            {
+                                [Hashtable]$element.SafeGetValue()
                             }
                         }
-                        $ht
-                    }
-                    elseif ($argumentAst -is [StringConstantExpressionAst])
-                    {
-                        $argumentAst.Value
                     }
                     else
                     {
-                        Write-Error -Message "Input was not a valid hashtable, string or collection of both. Please check the contents and try again."
+                        if ($argumentAst -is [HashtableAst])
+                        {
+                            $ht = [Hashtable]$argumentAst.SafeGetValue()
+                            for ($i = 1; $i -lt $ht.Keys.Count; $i++)
+                            {
+                                $value = $ht[([array]$ht.Keys)[$i]]
+                                if ($value -is [scriptblock])
+                                {
+                                    $scriptBlockText = $value.Ast.Extent.Text
+
+                                    if ($scriptBlockText[$value.Ast.Extent.StartOffset] -eq '{' -and $scriptBlockText[$value.Ast.Extent.EndOffset - 1] -eq '}')
+                                    {
+                                        $scriptBlockText = $scriptBlockText.Substring(0, $scriptBlockText.Length - 1)
+                                        $scriptBlockText = $scriptBlockText.Substring(1, $scriptBlockText.Length - 1)
+                                    }
+
+                                    $ht[([array]$ht.Keys)[$i]] = [scriptblock]::Create($scriptBlockText)
+                                }
+                            }
+                            $ht
+                        }
+                        elseif ($argumentAst -is [StringConstantExpressionAst])
+                        {
+                            $argumentAst.Value
+                        }
+                        else
+                        {
+                            Write-Error -Message "Input was not a valid hashtable, string or collection of both. Please check the contents and try again."
+                        }
                     }
                 }
             }
         }
     }
 }
+
+function Test-DscParameterState
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.Object]
+        $CurrentValues,
+
+        [Parameter(Mandatory = $true)]
+        [System.Object]
+        $DesiredValues,
+
+        [Parameter()]
+        [System.String[]]
+        $ValuesToCheck,
+
+        [Parameter()]
+        [switch]
+        $TurnOffTypeChecking,
+
+        [Parameter()]
+        [switch]
+        $ReverseCheck,
+
+        [Parameter()]
+        [switch]
+        $SortArrayValues
+    )
+
+    $returnValue = $true
+
+    if ($CurrentValues -is [Microsoft.Management.Infrastructure.CimInstance] -or
+    $CurrentValues -is [Microsoft.Management.Infrastructure.CimInstance[]])
+    {
+        $CurrentValues = ConvertTo-HashTable -CimInstance $CurrentValues
+    }
+
+    if ($DesiredValues -is [Microsoft.Management.Infrastructure.CimInstance] -or
+    $DesiredValues -is [Microsoft.Management.Infrastructure.CimInstance[]])
+    {
+        $DesiredValues = ConvertTo-HashTable -CimInstance $DesiredValues
+    }
+
+    $types = 'System.Management.Automation.PSBoundParametersDictionary', 'System.Collections.Hashtable', 'Microsoft.Management.Infrastructure.CimInstance'
+
+    if ($DesiredValues.GetType().FullName -notin $types)
+    {
+        New-InvalidArgumentException `
+        -Message ($script:localizedData.InvalidDesiredValuesError -f $DesiredValues.GetType().FullName) `
+        -ArgumentName 'DesiredValues'
+    }
+
+    if ($CurrentValues.GetType().FullName -notin $types)
+    {
+        New-InvalidArgumentException `
+        -Message ($script:localizedData.InvalidCurrentValuesError -f $CurrentValues.GetType().FullName) `
+        -ArgumentName 'CurrentValues'
+    }
+
+    if ($DesiredValues -is [Microsoft.Management.Infrastructure.CimInstance] -and -not $ValuesToCheck)
+    {
+        New-InvalidArgumentException `
+        -Message $script:localizedData.InvalidValuesToCheckError `
+        -ArgumentName 'ValuesToCheck'
+    }
+
+    $desiredValuesClean = Remove-CommonParameter -Hashtable $DesiredValues
+
+    if (-not $ValuesToCheck)
+    {
+        $keyList = $desiredValuesClean.Keys
+    }
+    else
+    {
+        $keyList = $ValuesToCheck
+    }
+
+    foreach ($key in $keyList)
+    {
+        $desiredValue = $desiredValuesClean.$key
+        $currentValue = $CurrentValues.$key
+
+        if ($desiredValue -is [Microsoft.Management.Infrastructure.CimInstance] -or
+        $desiredValue -is [Microsoft.Management.Infrastructure.CimInstance[]])
+        {
+            $desiredValue = ConvertTo-HashTable -CimInstance $desiredValue
+        }
+        if ($currentValue -is [Microsoft.Management.Infrastructure.CimInstance] -or
+        $currentValue -is [Microsoft.Management.Infrastructure.CimInstance[]])
+        {
+            $currentValue = ConvertTo-HashTable -CimInstance $currentValue
+        }
+
+        if ($desiredValue)
+        {
+            $desiredType = $desiredValue.GetType()
+        }
+        else
+        {
+            $desiredType = @{
+                Name = 'Unknown'
+            }
+        }
+
+        if ($currentValue)
+        {
+            $currentType = $currentValue.GetType()
+        }
+        else
+        {
+            $currentType = @{
+                Name = 'Unknown'
+            }
+        }
+
+        if ($currentType.Name -ne 'Unknown' -and $desiredType.Name -eq 'PSCredential')
+        {
+            # This is a credential object. Compare only the user name
+            if ($currentType.Name -eq 'PSCredential' -and $currentValue.UserName -eq $desiredValue.UserName)
+            {
+                Write-Verbose -Message ($script:localizedData.MatchPsCredentialUsernameMessage -f $currentValue.UserName, $desiredValue.UserName)
+                continue
+            }
+            else
+            {
+                Write-Verbose -Message ($script:localizedData.NoMatchPsCredentialUsernameMessage -f $currentValue.UserName, $desiredValue.UserName)
+                $returnValue = $false
+            }
+
+            # Assume the string is our username when the matching desired value is actually a credential
+            if ($currentType.Name -eq 'string' -and $currentValue -eq $desiredValue.UserName)
+            {
+                Write-Verbose -Message ($script:localizedData.MatchPsCredentialUsernameMessage -f $currentValue, $desiredValue.UserName)
+                continue
+            }
+            else
+            {
+                Write-Verbose -Message ($script:localizedData.NoMatchPsCredentialUsernameMessage -f $currentValue, $desiredValue.UserName)
+                $returnValue = $false
+            }
+        }
+
+        if (-not $TurnOffTypeChecking)
+        {
+            if (($desiredType.Name -ne 'Unknown' -and $currentType.Name -ne 'Unknown') -and
+            $desiredType.FullName -ne $currentType.FullName)
+            {
+                Write-Verbose -Message ($script:localizedData.NoMatchTypeMismatchMessage -f $key, $currentType.FullName, $desiredType.FullName)
+                $returnValue = $false
+                continue
+            }
+        }
+
+        if ($currentValue -eq $desiredValue -and -not $desiredType.IsArray)
+        {
+            Write-Verbose -Message ($script:localizedData.MatchValueMessage -f $desiredType.FullName, $key, $currentValue, $desiredValue)
+            continue
+        }
+
+        if ($desiredValuesClean.GetType().Name -in 'HashTable', 'PSBoundParametersDictionary')
+        {
+            $checkDesiredValue = $desiredValuesClean.ContainsKey($key)
+        }
+        else
+        {
+            $checkDesiredValue = Test-DscObjectHasProperty -Object $desiredValuesClean -PropertyName $key
+        }
+
+        if (-not $checkDesiredValue)
+        {
+            Write-Verbose -Message ($script:localizedData.MatchValueMessage -f $desiredType.FullName, $key, $currentValue, $desiredValue)
+            continue
+        }
+
+        if ($desiredType.IsArray)
+        {
+            Write-Verbose -Message ($script:localizedData.TestDscParameterCompareMessage -f $key, $desiredType.FullName)
+
+            if (-not $currentValue -and -not $desiredValue)
+            {
+                Write-Verbose -Message ($script:localizedData.MatchValueMessage -f $desiredType.FullName, $key, 'empty array', 'empty array')
+                continue
+            }
+            elseif (-not $currentValue)
+            {
+                Write-Verbose -Message ($script:localizedData.NoMatchValueMessage -f $desiredType.FullName, $key, $currentValue, $desiredValue)
+                $returnValue = $false
+                continue
+            }
+            elseif ($currentValue.Count -ne $desiredValue.Count)
+            {
+                Write-Verbose -Message ($script:localizedData.NoMatchValueDifferentCountMessage -f $desiredType.FullName, $key, $currentValue.Count, $desiredValue.Count)
+                $returnValue = $false
+                continue
+            }
+            else
+            {
+                $desiredArrayValues = $desiredValue
+                $currentArrayValues = $currentValue
+
+                if ($SortArrayValues)
+                {
+                    $desiredArrayValues = @($desiredArrayValues | Sort-Object)
+                    $currentArrayValues = @($currentArrayValues | Sort-Object)
+                }
+
+                for ($i = 0; $i -lt $desiredArrayValues.Count; $i++)
+                {
+                    if ($desiredArrayValues[$i])
+                    {
+                        $desiredType = $desiredArrayValues[$i].GetType()
+                    }
+                    else
+                    {
+                        $desiredType = @{
+                            Name = 'Unknown'
+                        }
+                    }
+
+                    if ($currentArrayValues[$i])
+                    {
+                        $currentType = $currentArrayValues[$i].GetType()
+                    }
+                    else
+                    {
+                        $currentType = @{
+                            Name = 'Unknown'
+                        }
+                    }
+
+                    if (-not $TurnOffTypeChecking)
+                    {
+                        if (($desiredType.Name -ne 'Unknown' -and $currentType.Name -ne 'Unknown') -and
+                        $desiredType.FullName -ne $currentType.FullName)
+                        {
+                            Write-Verbose -Message ($script:localizedData.NoMatchElementTypeMismatchMessage -f $key, $i, $currentType.FullName, $desiredType.FullName)
+                            $returnValue = $false
+                            continue
+                        }
+                    }
+
+                    #Convert a scriptblock into a string as scriptblocks are not comparable
+                    $wasCurrentArrayValuesConverted = $false
+                    if ($currentArrayValues[$i] -is [scriptblock])
+                    {
+                        $currentArrayValues[$i] = if ($desiredArrayValues[$i] -is [string])
+                        {
+                            $currentArrayValues[$i] = $currentArrayValues[$i].Invoke()
+                        }
+                        else
+                        {
+                            $currentArrayValues[$i].ToString()
+                        }
+                        $wasCurrentArrayValuesConverted = $true
+                    }
+                    if ($desiredArrayValues[$i] -is [scriptblock])
+                    {
+                        $desiredArrayValues[$i] = if ($currentArrayValues[$i] -is [string] -and -not $wasCurrentArrayValuesConverted)
+                        {
+                            $desiredArrayValues[$i].Invoke()
+                        }
+                        else
+                        {
+                            $desiredArrayValues[$i].ToString()
+                        }
+                    }
+
+                    if ($desiredType -eq [System.Collections.Hashtable] -and $currentType -eq [System.Collections.Hashtable])
+                    {
+                        $param = $PSBoundParameters
+                        $param.CurrentValues = $currentArrayValues[$i]
+                        $param.DesiredValues = $desiredArrayValues[$i]
+                        $null = $param.Remove('ValuesToCheck')
+
+                        if ($returnValue)
+                        {
+                            $returnValue = Test-DscParameterState @param
+                        }
+                        else
+                        {
+                            Test-DscParameterState @param | Out-Null
+                        }
+                        continue
+                    }
+
+                    if ($desiredArrayValues[$i] -ne $currentArrayValues[$i])
+                    {
+                        Write-Verbose -Message ($script:localizedData.NoMatchElementValueMismatchMessage -f $i, $desiredType.FullName, $key, $currentArrayValues[$i], $desiredArrayValues[$i])
+                        $returnValue = $false
+                        continue
+                    }
+                    else
+                    {
+                        Write-Verbose -Message ($script:localizedData.MatchElementValueMessage -f $i, $desiredType.FullName, $key, $currentArrayValues[$i], $desiredArrayValues[$i])
+                        continue
+                    }
+                }
+
+            }
+        }
+        elseif ($desiredType -eq [System.Collections.Hashtable] -and $currentType -eq [System.Collections.Hashtable])
+        {
+            $param = $PSBoundParameters
+            $param.CurrentValues = $currentValue
+            $param.DesiredValues = $desiredValue
+            $null = $param.Remove('ValuesToCheck')
+
+            if ($returnValue)
+            {
+                $returnValue = Test-DscParameterState @param
+            }
+            else
+            {
+                Test-DscParameterState @param | Out-Null
+            }
+            continue
+        }
+        else
+        {
+            #Convert a scriptblock into a string as scriptblocks are not comparable
+            $wasCurrentValue = $false
+            if ($currentValue -is [scriptblock])
+            {
+                $currentValue = if ($desiredValue -is [string])
+                {
+                    $currentValue = $currentValue.Invoke()
+                }
+                else
+                {
+                    $currentValue.ToString()
+                }
+                $wasCurrentValue = $true
+            }
+            if ($desiredValue -is [scriptblock])
+            {
+                $desiredValue = if ($currentValue -is [string] -and -not $wasCurrentValue)
+                {
+                    $desiredValue.Invoke()
+                }
+                else
+                {
+                    $desiredValue.ToString()
+                }
+            }
+
+            if ($desiredValue -ne $currentValue)
+            {
+                Write-Verbose -Message ($script:localizedData.NoMatchValueMessage -f $desiredType.FullName, $key, $currentValue, $desiredValue)
+                $returnValue = $false
+            }
+        }
+    }
+
+    if ($ReverseCheck)
+    {
+        Write-Verbose -Message $script:localizedData.StartingReverseCheck
+        $reverseCheckParameters = $PSBoundParameters
+        $reverseCheckParameters.CurrentValues = $DesiredValues
+        $reverseCheckParameters.DesiredValues = $CurrentValues
+        $null = $reverseCheckParameters.Remove('ReverseCheck')
+
+        if ($returnValue)
+        {
+            $returnValue = Test-DscParameterState @reverseCheckParameters
+        }
+        else
+        {
+            $null = Test-DscParameterState @reverseCheckParameters
+        }
+    }
+
+    Write-Verbose -Message ($script:localizedData.TestDscParameterResultMessage -f $returnValue)
+    return $returnValue
+}
+
+function New-InvalidArgumentException
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [System.String]
+        $Message,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [System.String]
+        $ArgumentName
+    )
+
+    $argumentException = New-Object -TypeName 'ArgumentException' `
+    -ArgumentList @($Message, $ArgumentName)
+
+    $newObjectParameters = @{
+        TypeName     = 'System.Management.Automation.ErrorRecord'
+        ArgumentList = @($argumentException, $ArgumentName, 'InvalidArgument', $null)
+    }
+
+    $errorRecord = New-Object @newObjectParameters
+
+    throw $errorRecord
+}
+
+function Remove-CommonParameter
+{
+    [OutputType([System.Collections.Hashtable])]
+    [cmdletbinding()]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.Collections.Hashtable]
+        $Hashtable
+    )
+
+    $inputClone = $Hashtable.Clone()
+    $commonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
+    $commonParameters += [System.Management.Automation.PSCmdlet]::OptionalCommonParameters
+
+    $Hashtable.Keys | Where-Object -FilterScript {
+        $_ -in $commonParameters
+    } | ForEach-Object -Process {
+        $inputClone.Remove($_)
+    }
+
+    return $inputClone
+}
+
+function Get-LocalizedData
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [System.String]
+        $ResourceName,
+
+        [Parameter()]
+        [ValidateNotNullOrEmpty()]
+        [System.String]
+        $ScriptRoot
+    )
+
+    if (-not $ScriptRoot)
+    {
+        $dscResourcesFolder = Join-Path -Path (Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent) -ChildPath 'DSCResources'
+        $resourceDirectory = Join-Path -Path $dscResourcesFolder -ChildPath $ResourceName
+    }
+    else
+    {
+        $resourceDirectory = $ScriptRoot
+    }
+
+    $localizedStringFileLocation = Join-Path -Path $resourceDirectory -ChildPath $PSUICulture
+
+    if (-not (Test-Path -Path $localizedStringFileLocation))
+    {
+        # Fallback to en-US
+        $localizedStringFileLocation = Join-Path -Path $resourceDirectory -ChildPath 'en-US'
+    }
+
+    Import-LocalizedData `
+    -BindingVariable 'localizedData' `
+    -FileName "$ResourceName.strings.psd1" `
+    -BaseDirectory $localizedStringFileLocation
+
+    return $localizedData
+}
+
+function Sync-Parameter
+{
+    [Cmdletbinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateScript( {
+                    $_ -is [System.Management.Automation.FunctionInfo] -or $_ -is [System.Management.Automation.CmdletInfo] -or $_ -is [System.Management.Automation.ExternalScriptInfo]
+        })]
+        [object]$Command,
+
+        [Parameter(Mandatory = $true)]
+        [hashtable]$Parameters
+    )
+
+    $commonParameters = [System.Management.Automation.Internal.CommonParameters].GetProperties().Name
+    $commandParameterKeys = $Command.Parameters.Keys.GetEnumerator() | ForEach-Object { $_ }
+    $parameterKeys = $Parameters.Keys.GetEnumerator() | ForEach-Object { $_ }
+
+    $keysToRemove = Compare-Object -ReferenceObject $commandParameterKeys -DifferenceObject $parameterKeys |
+    Select-Object -ExpandProperty InputObject
+
+    $keysToRemove = $keysToRemove + $commonParameters | Select-Object -Unique #remove the common parameters
+
+    foreach ($key in $keysToRemove)
+    {
+        $Parameters.Remove($key)
+    }
+
+    $Parameters
+}
+
+
+$script:localizedData = Get-LocalizedData `
+-ResourceName 'JeaDsc' `
+-ScriptRoot $PSScriptRoot

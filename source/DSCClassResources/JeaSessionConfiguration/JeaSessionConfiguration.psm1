@@ -99,7 +99,7 @@ class JeaSessionConfiguration
     ## This should be a string that represents a Hashtable or array of Hashtable
     ## AliasDefinitions = "@{ Name = 'Alias1'; Value = 'Invoke-Alias1'}, @{ Name = 'Alias2'; Value = 'Invoke-Alias2'}"
     [Dscproperty()]
-    [string] $AliasDefinitions
+    [string[]] $AliasDefinitions
 
     ## The optional functions to define when applied to a session
     ## This should be a string that represents a Hashtable or array of Hashtable
@@ -117,7 +117,7 @@ class JeaSessionConfiguration
     ## This should be a string that represents a Hashtable
     ## EnvironmentVariables = "@{ Variable1 = 'Value1'; Variable2 = 'Value2' }"
     [Dscproperty()]
-    [string[]] $EnvironmentVariables
+    [string] $EnvironmentVariables
 
     ## The optional type files (.ps1xml) to load when applied to a session
     [Dscproperty()]
@@ -159,13 +159,12 @@ class JeaSessionConfiguration
         }
     }
 
-    ## Applies the JEA configuration
     [void] Set()
     {
         $ErrorActionPreference = 'Stop'
 
         $psscPath = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName() + ".pssc")
-
+        Write-Verbose "Storing PSSessionConfigurationFile in file '$psscPath'"
         $parameters = Convert-ObjectToOrderedDictionary -Object $this
         $parameters.Add('Path', $psscPath)
 
@@ -175,7 +174,6 @@ class JeaSessionConfiguration
             {
                 $parameters[$parameter] = Convert-StringToObject -InputString $parameters[$parameter]
             }
-
         }
 
         ## Register the endpoint
@@ -200,12 +198,12 @@ class JeaSessionConfiguration
             if ($this.Ensure -eq [Ensure]::Present)
             {
                 ## Create the configuration file
+                #New-PSSessionConfigurationFile @configurationFileArguments
                 $parameters = Sync-Parameter -Command (Get-Command -Name New-PSSessionConfigurationFile) -Parameters $parameters
                 New-PSSessionConfigurationFile @parameters
 
                 ## Register the configuration file
                 $this.RegisterPSSessionConfiguration($this.Name, $psscPath, $this.HungRegistrationTimeout)
-
             }
         }
         catch
@@ -228,6 +226,11 @@ class JeaSessionConfiguration
         $parameters = Convert-ObjectToHashtable -Object $this
 
         # short-circuit if the resource is not present and is not supposed to be present
+        if ($currentState.Ensure -ne $parameters.Ensure)
+        {
+            Write-Verbose "Desired state of session configuration named '$($currentState.Name)' is '$($parameters.Ensure)', current state is '$($currentState.Ensure)' "
+            return $false
+        }
         if ($this.Ensure -eq [Ensure]::Absent)
         {
             if ($currentState.Ensure -eq [Ensure]::Absent)
@@ -239,30 +242,23 @@ class JeaSessionConfiguration
             return $false
         }
 
-        if ($currentState.Name -ne $this.Name)
-        {
-            Write-Verbose "Name not equal: $($currentState.Name)"
-            return $false
-        }
-
         $cmdlet = Get-Command -Name New-PSSessionConfigurationFile
         $parameters = Sync-Parameter -Command $cmdlet -Parameters $parameters
+        $currentState = Sync-Parameter -Command $cmdlet -Parameters $currentState
         $propertiesAsObject = $cmdlet.Parameters.Keys |
         Where-Object { $_ -in $parameters.Keys } |
-        Where-Object { $cmdlet.Parameters.$_.ParameterType.FullName -in 'System.Collections.IDictionary', 'System.Collections.Hashtable' }
+        Where-Object { $cmdlet.Parameters.$_.ParameterType.FullName -in 'System.Collections.IDictionary', 'System.Collections.Hashtable', 'System.Collections.IDictionary[]', 'System.Object[]' }
         foreach ($p in $propertiesAsObject)
         {
-            if ($cmdlet.Parameters.$p.ParameterType.FullName -in 'System.Collections.Hashtable', 'System.Collections.IDictionary')
+            if ($cmdlet.Parameters.$p.ParameterType.FullName -in 'System.Collections.Hashtable', 'System.Collections.IDictionary', 'System.Collections.IDictionary[]', 'System.Object[]')
             {
-                $parameters."$($p)" = $this."$($p)" | Convert-StringToHashtable
-                $currentState."$($p)" = $currentState."$($p)" | Convert-StringToHashtable
+                $parameters."$($p)" = $parameters."$($p)" | Convert-StringToObject
+                $currentState."$($p)" = $currentState."$($p)" | Convert-StringToObject
+
             }
         }
 
-        #$parameters.Remove('HungRegistrationTimeout')
-        #$currentState.Remove('HungRegistrationTimeout')
-
-        $compare = Test-DscParameterState -CurrentValues $currentState -DesiredValues $parameters -TurnOffTypeChecking -SortArrayValues
+        $compare = Test-DscParameterState -CurrentValues $currentState -DesiredValues $parameters -TurnOffTypeChecking -SortArrayValues -ReverseCheck
 
         return $compare
     }
@@ -274,14 +270,14 @@ class JeaSessionConfiguration
         if ($winRMService -and $winRMService.Status -eq 'Running')
         {
             # Temporary disabling Verbose as xxx-PSSessionConfiguration methods verbose messages are useless for DSC debugging
-            $VerbosePreferenceBackup = $Global:VerbosePreference
+            $verbosePreferenceBackup = $Global:VerbosePreference
             $Global:VerbosePreference = 'SilentlyContinue'
-            $PSSessionConfiguration = Get-PSSessionConfiguration -Name $Name -ErrorAction 'SilentlyContinue'
-            $Global:VerbosePreference = $VerbosePreferenceBackup
+            $psSessionConfiguration = Get-PSSessionConfiguration -Name $Name -ErrorAction SilentlyContinue
+            $Global:VerbosePreference = $verbosePreferenceBackup
 
-            if ($PSSessionConfiguration)
+            if ($psSessionConfiguration)
             {
-                return $PSSessionConfiguration
+                return $psSessionConfiguration
             }
             else
             {
