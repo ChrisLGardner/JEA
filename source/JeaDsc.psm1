@@ -463,7 +463,7 @@ function ConvertTo-Expression
             function Quote
             {
                 param (
-                    [Parameter(Mandatory = $true)]
+                    [Parameter()]
                     [string]$Item
                 )
                 "'$($Item.Replace('''', ''''''))'"
@@ -472,7 +472,7 @@ function ConvertTo-Expression
             function Here
             {
                 param (
-                    [Parameter(Mandatory = $true)]
+                    [Parameter()]
                     [string]$Item
                 )
 
@@ -912,7 +912,11 @@ function Test-DscParameterState
 
         [Parameter()]
         [System.String[]]
-        $ValuesToCheck,
+        $Properties,
+        
+        [Parameter()]
+        [System.String[]]
+        $ExcludeProperties,
 
         [Parameter()]
         [switch]
@@ -932,13 +936,13 @@ function Test-DscParameterState
     if ($CurrentValues -is [Microsoft.Management.Infrastructure.CimInstance] -or
     $CurrentValues -is [Microsoft.Management.Infrastructure.CimInstance[]])
     {
-        $CurrentValues = ConvertTo-HashTable -CimInstance $CurrentValues
+        $CurrentValues = Convert-ObjectToHashtable -Object $CurrentValues
     }
 
     if ($DesiredValues -is [Microsoft.Management.Infrastructure.CimInstance] -or
     $DesiredValues -is [Microsoft.Management.Infrastructure.CimInstance[]])
     {
-        $DesiredValues = ConvertTo-HashTable -CimInstance $DesiredValues
+        $DesiredValues = Convert-ObjectToHashtable -Object $DesiredValues
     }
 
     $types = 'System.Management.Automation.PSBoundParametersDictionary', 'System.Collections.Hashtable', 'Microsoft.Management.Infrastructure.CimInstance'
@@ -957,7 +961,7 @@ function Test-DscParameterState
         -ArgumentName 'CurrentValues'
     }
 
-    if ($DesiredValues -is [Microsoft.Management.Infrastructure.CimInstance] -and -not $ValuesToCheck)
+    if ($DesiredValues -is [Microsoft.Management.Infrastructure.CimInstance] -and -not $Properties)
     {
         New-InvalidArgumentException `
         -Message $script:localizedData.InvalidValuesToCheckError `
@@ -966,13 +970,17 @@ function Test-DscParameterState
 
     $desiredValuesClean = Remove-CommonParameter -Hashtable $DesiredValues
 
-    if (-not $ValuesToCheck)
+    if (-not $Properties)
     {
         $keyList = $desiredValuesClean.Keys
     }
     else
     {
-        $keyList = $ValuesToCheck
+        $keyList = $Properties
+    }
+    if ($ExcludeProperties)
+    {
+        $keyList = $keyList | Where-Object { $_ -notin $ExcludeProperties }
     }
 
     foreach ($key in $keyList)
@@ -983,12 +991,12 @@ function Test-DscParameterState
         if ($desiredValue -is [Microsoft.Management.Infrastructure.CimInstance] -or
         $desiredValue -is [Microsoft.Management.Infrastructure.CimInstance[]])
         {
-            $desiredValue = ConvertTo-HashTable -CimInstance $desiredValue
+            $desiredValue = Convert-ObjectToHashtable -Object $desiredValue
         }
         if ($currentValue -is [Microsoft.Management.Infrastructure.CimInstance] -or
         $currentValue -is [Microsoft.Management.Infrastructure.CimInstance[]])
         {
-            $currentValue = ConvertTo-HashTable -CimInstance $currentValue
+            $currentValue = Convert-ObjectToHashtable -Object $currentValue
         }
 
         if ($desiredValue)
