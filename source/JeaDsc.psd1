@@ -22,7 +22,6 @@
     )
 
     FunctionsToExport    = @(
-        'Compare-JeaConfiguration'
         'Convert-ObjectToHashtable'
         'Convert-ObjectToOrderedDictionary'
         'Convert-StringToObject'
