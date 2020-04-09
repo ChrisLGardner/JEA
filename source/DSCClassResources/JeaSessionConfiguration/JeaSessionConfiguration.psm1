@@ -165,7 +165,7 @@ class JeaSessionConfiguration
 
         $psscPath = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName() + ".pssc")
         Write-Verbose "Storing PSSessionConfigurationFile in file '$psscPath'"
-        $parameters = Convert-ObjectToOrderedDictionary -Object $this
+        $parameters = Convert-ObjectToHashtable -Object $this
         $parameters.Add('Path', $psscPath)
 
         if ($this.Ensure -eq [Ensure]::Present)
