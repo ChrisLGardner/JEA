@@ -128,7 +128,7 @@ Write-Host 'General Server Maintenance Endpoint' -ForegroundColor Green
 
 }
 
-Remove-Item -Path C:\DSC\*
+Remove-Item -Path C:\DSC\* -ErrorAction SilentlyContinue
 GeneralServerMaintenance -OutputPath C:\DSC -Verbose
 
 Start-DscConfiguration -Path C:\DSC -Wait -Verbose -Force
