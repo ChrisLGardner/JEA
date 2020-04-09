@@ -818,6 +818,7 @@ function Convert-StringToObject
     [cmdletbinding()]
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [AllowNull()]
         [string[]]$InputString
     )
 
@@ -913,7 +914,7 @@ function Test-DscParameterState
         [Parameter()]
         [System.String[]]
         $Properties,
-        
+
         [Parameter()]
         [System.String[]]
         $ExcludeProperties,
