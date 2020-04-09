@@ -119,10 +119,10 @@ Write-Host 'General Server Maintenance Endpoint' -ForegroundColor Green
         SessionType         = 'RestrictedRemoteServer'
         RunAsVirtualAccount = $true
         RoleDefinitions     = "@{
-            'randr'      = @{ RoleCapabilities = 'GeneralLevel1' }
-            'randr'       = @{ RoleCapabilities = 'GeneralLevel1', 'GeneralLevel2' }
-            'randr'  = @{ RoleCapabilities = 'IisLevel1' }
-            'randr'    = @{ RoleCapabilities = 'IisLevel1', 'IisLevel2' }
+            'Contoso\Chile'      = @{ RoleCapabilities = 'GeneralLevel1' }
+            'Contoso\Peru'       = @{ RoleCapabilities = 'GeneralLevel1', 'GeneralLevel2' }
+            'Contoso\Venezuela'  = @{ RoleCapabilities = 'IisLevel1' }
+            'Contoso\Uruguay'    = @{ RoleCapabilities = 'IisLevel1', 'IisLevel2' }
         }"
     }
 
