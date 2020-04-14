@@ -61,7 +61,7 @@ Configuration DscDiagnostic
 
 }
 
-Remove-Item -Path C:\DSC\* -ErrorAction SilentlyContinue
-DscDiagnostic -OutputPath C:\DSC -Verbose
-
-Start-DscConfiguration -Path C:\DSC -Wait -Verbose -Force
+#Remove-Item -Path C:\DSC\* -ErrorAction SilentlyContinue
+#DscDiagnostic -OutputPath C:\DSC -Verbose
+#
+#Start-DscConfiguration -Path C:\DSC -Wait -Verbose -Force

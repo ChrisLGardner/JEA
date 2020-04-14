@@ -13,7 +13,7 @@ Write-Host 'General Server Maintenance Endpoint' -ForegroundColor Green
         Force           = $true
     }
 
-    JeaRoleCapabilities GeneralLevel1
+    JeaRoleCapabilities GenleralLevel1
     {
         Path                    = 'C:\Program Files\WindowsPowerShell\Modules\GeneralServerMaintenance\RoleCapabilities\GeneralLevel1.psrc'
         Description             = 'This role capability exposes basic networking, security, and configuration settings for the local server.'
@@ -115,7 +115,7 @@ Write-Host 'General Server Maintenance Endpoint' -ForegroundColor Green
         Name                = 'GeneralServerMaintenance'
         TranscriptDirectory = 'C:\ProgramData\GeneralServerMaintenance\Transcripts'
         ScriptsToProcess    = 'C:\ProgramData\GeneralServerMaintenance\Startup.ps1'
-        #DependsOn           = '[JeaRoleCapabilities]DnsAdminRoleCapability'
+        DependsOn           = '[JeaRoleCapabilities]GenleralLevel1', '[JeaRoleCapabilities]GenleralLevel2', '[JeaRoleCapabilities]IisLevel1', '[JeaRoleCapabilities]IisLevel2'
         SessionType         = 'RestrictedRemoteServer'
         RunAsVirtualAccount = $true
         RoleDefinitions     = "@{
@@ -128,7 +128,7 @@ Write-Host 'General Server Maintenance Endpoint' -ForegroundColor Green
 
 }
 
-Remove-Item -Path C:\DSC\* -ErrorAction SilentlyContinue
-GeneralServerMaintenance -OutputPath C:\DSC -Verbose
-
-Start-DscConfiguration -Path C:\DSC -Wait -Verbose -Force
+#Remove-Item -Path C:\DSC\* -ErrorAction SilentlyContinue
+#GeneralServerMaintenance -OutputPath C:\DSC -Verbose
+#
+#Start-DscConfiguration -Path C:\DSC -Wait -Verbose -Force

@@ -47,11 +47,11 @@ Write-Host 'DNS Management Endpoint' -ForegroundColor Green
         }"
         TranscriptDirectory = 'C:\ProgramData\DnsManagementEndpoint\Transcripts'
         ScriptsToProcess    = 'C:\ProgramData\DnsManagementEndpoint\Startup.ps1'
-        DependsOn           = '[JeaRoleCapabilities]DnsAdminRoleCapability'
+        DependsOn           = '[JeaRoleCapabilities]DnsAdminRoleCapability', '[JeaRoleCapabilities]DnsViewerRoleCapability'
     }
 }
 
-Remove-Item -Path C:\DSC\* -ErrorAction SilentlyContinue
-DnsAdmin -OutputPath C:\DSC -Verbose
-
-Start-DscConfiguration -Path C:\DSC -Wait -Verbose -Force
+#Remove-Item -Path C:\DSC\* -ErrorAction SilentlyContinue
+#DnsAdmin -OutputPath C:\DSC -Verbose
+#
+#Start-DscConfiguration -Path C:\DSC -Wait -Verbose -Force
