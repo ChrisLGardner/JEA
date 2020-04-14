@@ -27,6 +27,7 @@
         'Convert-StringToObject'
         'ConvertTo-Expression'
         'ConvertTo-OrderedDictionary'
+        'Sync-Parameter'
         'Test-DscParameterState'
     )
 
