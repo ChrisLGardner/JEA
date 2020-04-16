@@ -1,6 +1,7 @@
 Configuration FailingFunctionDefinitions {
     param (
-        $Path
+        [Parameter(Mandatory = $true)]
+        [string]$Path
     )
 
     Import-DscResource -ModuleName JeaDsc
@@ -12,5 +13,6 @@ Configuration FailingFunctionDefinitions {
             Ensure = 'Present'
             FunctionDefinitions = '@{Name = "Get-ExampleData"; ScriptBlock = {Get-Command} }'
         }
+
     }
 }

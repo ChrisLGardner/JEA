@@ -1,31 +1,51 @@
 Using Module JeaDsc
 
+$script:dscModuleName = 'JeaDsc'
+$script:dscResourceName = 'JeaRoleCapabilities'
+
+try
+{
+    Import-Module -Name DscResource.Test -Force -ErrorAction 'Stop'
+}
+catch [System.IO.FileNotFoundException]
+{
+    throw 'DscResource.Test module dependency not found. Please run ".\build.ps1 -Tasks build" first.'
+}
+
+$script:testEnvironment = Initialize-TestEnvironment `
+    -DSCModuleName $script:dscModuleName `
+    -DSCResourceName $script:dscResourceName `
+    -ResourceType 'Mof' `
+    -TestType 'Integration'
+
+#Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\TestHelpers\CommonTestHelper.psm1')
+
+
 InModuleScope JeaDsc {
     Describe "Integration testing JeaRoleCapabilities" -Tag Integration {
 
         BeforeAll {
-            #$ModulePath = Resolve-Path -Path $PSScriptRoot\..\..\..\
-            #$OldPsModulePath = $Env:PSModulePath
-            #$Env:PSModulePath += ";$ModulePath"
-            #[Environment]::SetEnvironmentVariable('PSModulePath',$Env:PSModulePath,[EnvironmentVariableTarget]::Machine)
-            #$Env:PSModulePath += ";TestDrive:\"
+            #$modulePath = Resolve-Path -Path $PSScriptRoot\..\..
+            #$oldPsModulePath = $Env:PSModulePath
+            #$env:PSModulePath += ";$modulePath"
+            #[System.Environment]::SetEnvironmentVariable('PSModulePath', $env:PSModulePath, 'Machine')
+            #$env:PSModulePath += ";TestDrive:\"
 
-            $BuildBox = $true
-            if ($Env:SYSTEM_DEFAULTWORKINGDIRECTORY) {
-                &winrm quickconfig -quiet -force
-                $BuildBox = $false
-            }
+            $buildBox = $true
+            #if ($env:SYSTEM_DEFAULTWORKINGDIRECTORY) {
+                winrm quickconfig -quiet -force
+                $buildBox = $false
+            #}
         }
 
         AfterAll {
-            #[Environment]::SetEnvironmentVariable('PSModulePath',$OldPsModulePath,[EnvironmentVariableTarget]::Machine)
+            #[System.Environment]::SetEnvironmentVariable('PSModulePath', $oldPsModulePath, 'Machine')
         }
 
         BeforeEach {
             $class = [JeaRoleCapabilities]::New()
             $class.Path = 'TestDrive:\ModuleFolder\RoleCapabilities\ExampleRole.psrc'
         }
-
 
         Context "Testing Get method when Ensure is Present" {
 
@@ -189,21 +209,21 @@ InModuleScope JeaDsc {
 
         Context "Testing Applying BasicVisibleCmdlets Configuration File" {
 
-            It "Should apply the example BasicVisibleCmdlets configuration without throwing" -Skip:$BuildBox {
-                $ConfigFile = Join-Path -Path $PSScriptRoot -ChildPath 'TestConfigurations\BasicVisibleCmdlets.config.ps1'
-                . $ConfigFile
+            It "Should apply the example BasicVisibleCmdlets configuration without throwing" -Skip:$buildBox {
+                $configFile = Join-Path -Path $PSScriptRoot -ChildPath 'TestConfigurations\BasicVisibleCmdlets.config.ps1'
+                . $configFile
 
-                $MofOutputFolder = 'TestDrive:\Configurations\BasicVisibleCmdlets'
+                $mofOutputFolder = 'TestDrive:\Configurations\BasicVisibleCmdlets'
                 $PsrcPath = Join-Path (Get-Item TestDrive:\).FullName -ChildPath 'BasicVisibleCmdlets\RoleCapabilities\BasicVisibleCmdlets.psrc'
-                &BasicVisibleCmdlets -OutputPath $MofOutputFolder -Path $PsrcPath
-                { Start-DscConfiguration -Path $MofOutputFolder -Wait -Force } | Should -Not -Throw
+                BasicVisibleCmdlets -OutputPath $mofOutputFolder -Path $PsrcPath
+                { Start-DscConfiguration -Path $mofOutputFolder -Wait -Force } | Should -Not -Throw
             }
 
-            It "Should be able to call Get-DscConfiguration without throwing" -Skip:$BuildBox {
+            It "Should be able to call Get-DscConfiguration without throwing" -Skip:$buildBox {
                 { Get-DscConfiguration -ErrorAction Stop } | Should -Not -Throw
             }
 
-            It "Should have created the psrc file and set the VisibleCmdlets to Get-Service" -Skip:$BuildBox {
+            It "Should have created the psrc file and set the VisibleCmdlets to Get-Service" -Skip:$buildBox {
                 Test-Path -Path 'TestDrive:\BasicVisibleCmdlets\RoleCapabilities\BasicVisibleCmdlets.psrc' | Should -Be $true
 
                 $results = Import-PowerShellDataFile -Path 'TestDrive:\BasicVisibleCmdlets\RoleCapabilities\BasicVisibleCmdlets.psrc'
@@ -214,21 +234,21 @@ InModuleScope JeaDsc {
 
         Context "Testing Applying WildcardVisibleCmdlets Configuration File" {
 
-            It "Should apply the example WildcardVisibleCmdlets configuration without throwing" -Skip:$BuildBox {
-                $ConfigFile = Join-Path -Path $PSScriptRoot -ChildPath 'TestConfigurations\WildcardVisibleCmdlets.config.ps1'
-                . $ConfigFile
+            It "Should apply the example WildcardVisibleCmdlets configuration without throwing" -Skip:$buildBox {
+                $configFile = Join-Path -Path $PSScriptRoot -ChildPath 'TestConfigurations\WildcardVisibleCmdlets.config.ps1'
+                . $configFile
 
-                $MofOutputFolder = 'TestDrive:\Configurations\WildcardVisibleCmdlets'
+                $mofOutputFolder = 'TestDrive:\Configurations\WildcardVisibleCmdlets'
                 $PsrcPath = Join-Path (Get-Item TestDrive:\).FullName -ChildPath 'WildcardVisibleCmdlets\RoleCapabilities\WildcardVisibleCmdlets.psrc'
-                &WildcardVisibleCmdlets -OutputPath $MofOutputFolder -Path $PsrcPath
-                { Start-DscConfiguration -Path $MofOutputFolder -Wait -Force } | Should -Not -Throw
+                WildcardVisibleCmdlets -OutputPath $mofOutputFolder -Path $PsrcPath
+                { Start-DscConfiguration -Path $mofOutputFolder -Wait -Force } | Should -Not -Throw
             }
 
-            It "Should be able to call Get-DscConfiguration without throwing" -Skip:$BuildBox {
+            It "Should be able to call Get-DscConfiguration without throwing" -Skip:$buildBox {
                 { Get-DscConfiguration -ErrorAction Stop } | Should -Not -Throw
             }
 
-            It "Should have created the psrc file and set the VisibleCmdlets to Get-* and DnsServer\*" -Skip:$BuildBox {
+            It "Should have created the psrc file and set the VisibleCmdlets to Get-* and DnsServer\*" -Skip:$buildBox {
                 Test-Path -Path 'TestDrive:\WildcardVisibleCmdlets\RoleCapabilities\WildcardVisibleCmdlets.psrc' | Should -Be $true
 
                 $results = Import-PowerShellDataFile -Path 'TestDrive:\WildcardVisibleCmdlets\RoleCapabilities\WildcardVisibleCmdlets.psrc'
@@ -239,21 +259,21 @@ InModuleScope JeaDsc {
 
         Context "Testing Applying FunctionDefinitions Configuration File" {
 
-            It "Should apply the example FunctionDefinitions configuration without throwing" -Skip:$BuildBox {
-                $ConfigFile = Join-Path -Path $PSScriptRoot -ChildPath 'TestConfigurations\FunctionDefinitions.config.ps1'
-                . $ConfigFile
+            It "Should apply the example FunctionDefinitions configuration without throwing" -Skip:$buildBox {
+                $configFile = Join-Path -Path $PSScriptRoot -ChildPath 'TestConfigurations\FunctionDefinitions.config.ps1'
+                . $configFile
 
-                $MofOutputFolder = 'TestDrive:\Configurations\FunctionDefinitions'
+                $mofOutputFolder = 'TestDrive:\Configurations\FunctionDefinitions'
                 $PsrcPath = Join-Path (Get-Item TestDrive:\).FullName -ChildPath 'FunctionDefinitions\RoleCapabilities\FunctionDefinitions.psrc'
-                &FunctionDefinitions -OutputPath $MofOutputFolder -Path $PsrcPath
-                { Start-DscConfiguration -Path $MofOutputFolder -Wait -Force } | Should -Not -Throw
+                FunctionDefinitions -OutputPath $mofOutputFolder -Path $PsrcPath
+                { Start-DscConfiguration -Path $mofOutputFolder -Wait -Force } | Should -Not -Throw
             }
 
-            It "Should be able to call Get-DscConfiguration without throwing" -Skip:$BuildBox {
+            It "Should be able to call Get-DscConfiguration without throwing" -Skip:$buildBox {
                 { Get-DscConfiguration -ErrorAction Stop } | Should -Not -Throw
             }
 
-            It "Should have created the psrc file and set the FunctionDefinitions and VisibleFunctions to Get-ExampleData" -Skip:$BuildBox {
+            It "Should have created the psrc file and set the FunctionDefinitions and VisibleFunctions to Get-ExampleData" -Skip:$buildBox {
                 Test-Path -Path 'TestDrive:\FunctionDefinitions\RoleCapabilities\FunctionDefinitions.psrc' | Should -Be $true
 
                 $results = Import-PowerShellDataFile -Path 'TestDrive:\FunctionDefinitions\RoleCapabilities\FunctionDefinitions.psrc'
@@ -266,19 +286,20 @@ InModuleScope JeaDsc {
 
         Context "Testing Applying FailingFunctionDefinitions Configuration File" {
 
-            It "Should throw when attempting to apply the example FunctionDefinitions configuration" -Skip:$BuildBox {
-                $ConfigFile = Join-Path -Path $PSScriptRoot -ChildPath 'TestConfigurations\FailingFunctionDefinitions.config.ps1'
-                . $ConfigFile
+            It "Should throw when attempting to apply the example FunctionDefinitions configuration" -Skip:$buildBox {
+                $configFile = Join-Path -Path $PSScriptRoot -ChildPath 'TestConfigurations\FailingFunctionDefinitions.config.ps1'
+                . $configFile
 
-                $MofOutputFolder = 'TestDrive:\Configurations\FailingFunctionDefinitions'
+                $mofOutputFolder = 'TestDrive:\Configurations\FailingFunctionDefinitions'
                 $PsrcPath = Join-Path (Get-Item TestDrive:\).FullName -ChildPath 'FailingFunctionDefinitions\RoleCapabilities\FailingFunctionDefinitions.psrc'
-                &FailingFunctionDefinitions -OutputPath $MofOutputFolder -Path $PsrcPath
-                { Start-DscConfiguration -Path $MofOutputFolder -Wait -Force -ErrorAction Stop } | Should -Throw
+                FailingFunctionDefinitions -OutputPath $mofOutputFolder -Path $PsrcPath
+                { Start-DscConfiguration -Path $mofOutputFolder -Wait -Force -ErrorAction Stop } | Should -Throw
             }
 
-            It "Should not have created the psrc file" -Skip:$BuildBox {
+            It "Should not have created the psrc file" -Skip:$buildBox {
                 Test-Path -Path 'TestDrive:\FailingFunctionDefinitions\RoleCapabilities\FailingFunctionDefinitions.psrc' | Should -Be $false
             }
         }
+        #>
     }
 }

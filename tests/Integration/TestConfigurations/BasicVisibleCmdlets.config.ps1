@@ -1,6 +1,7 @@
 Configuration BasicVisibleCmdlets {
     param (
-        $Path
+        [Parameter(Mandatory = $true)]
+        [string]$Path
     )
 
     Import-DscResource -ModuleName JeaDsc
@@ -12,5 +13,6 @@ Configuration BasicVisibleCmdlets {
             Ensure = 'Present'
             VisibleCmdlets = 'Get-Service'
         }
+
     }
 }

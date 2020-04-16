@@ -1,6 +1,7 @@
 Configuration WildcardVisibleCmdlets {
     param (
-        $Path
+        [Parameter(Mandatory = $true)]
+        [string]$Path
     )
 
     Import-DscResource -ModuleName JeaDsc
@@ -12,5 +13,6 @@ Configuration WildcardVisibleCmdlets {
             Ensure = 'Present'
             VisibleCmdlets = 'Get-*','DnsServer\*'
         }
+
     }
 }

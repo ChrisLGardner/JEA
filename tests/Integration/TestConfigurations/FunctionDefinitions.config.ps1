@@ -1,6 +1,7 @@
 Configuration FunctionDefinitions {
     param (
-        $Path
+        [Parameter(Mandatory = $true)]
+        [string]$Path
     )
 
     Import-DscResource -ModuleName JeaDsc
@@ -13,5 +14,6 @@ Configuration FunctionDefinitions {
             FunctionDefinitions = '@{Name = "Get-ExampleData"; ScriptBlock = {Get-Command} }'
             VisibleFunctions = 'Get-ExampleData'
         }
+
     }
 }
