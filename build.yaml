@@ -78,6 +78,7 @@ Pester: #Passthru, OutputFile, CodeCoverageOutputFile not supported
   ExcludeFromCodeCoverage:
      - Template
      - DSCResources
+     - DSCClassResources
      - JeaDsc.psm1
   # Default is to use the tests folder in the project folder or source folder (if present)
   # can use it to prioritize: tests/QA, tests/Unit, tests/Integration
