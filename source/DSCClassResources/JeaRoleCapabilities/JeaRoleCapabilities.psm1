@@ -174,6 +174,8 @@ class JeaRoleCapabilities
 
     [void] Set()
     {
+        $invalidConfiguration = $false
+
         if ($this.Ensure -eq [Ensure]::Present)
         {
             $parameters = Convert-ObjectToHashtable -Object $this
@@ -183,10 +185,25 @@ class JeaRoleCapabilities
                 $parameters[$parameter] = Convert-StringToObject -InputString $parameters[$parameter]
             }
 
-            $null = New-Item -Path $this.Path -ItemType File -Force
-
             $parameters = Sync-Parameter -Command (Get-Command -Name New-PSRoleCapabilityFile) -Parameters $parameters
-            New-PSRoleCapabilityFile @parameters
+
+            if ($parameters.ContainsKey('FunctionDefinitions'))
+            {
+                foreach ($functionDefinitionName in $Parameters['FunctionDefinitions'].Name)
+                {
+                    if ($functionDefinitionName -notin $Parameters['VisibleFunctions'])
+                    {
+                        Write-Verbose -"Function defined but not visible to Role Configuration: $functionDefinitionName"
+                        Write-Error "Function defined but not visible to Role Configuration: $functionDefinitionName"
+                        $invalidConfiguration = $true
+                    }
+                }
+            }
+
+            if (-not $invalidConfiguration)
+            {
+                New-PSRoleCapabilityFile @parameters
+            }
         }
         elseif ($this.Ensure -eq [Ensure]::Absent -and (Test-Path -Path $this.Path))
         {
