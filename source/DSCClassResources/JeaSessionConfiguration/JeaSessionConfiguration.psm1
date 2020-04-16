@@ -298,10 +298,10 @@ class JeaSessionConfiguration
         if ($winRMService -and $winRMService.Status -eq 'Running')
         {
             # Temporary disabling Verbose as xxx-PSSessionConfiguration methods verbose messages are useless for DSC debugging
-            $VerbosePreferenceBackup = $Global:VerbosePreference
+            $verbosePreferenceBackup = $Global:VerbosePreference
             $Global:VerbosePreference = 'SilentlyContinue'
             $null = Unregister-PSSessionConfiguration -Name $Name -Force -WarningAction 'SilentlyContinue'
-            $Global:VerbosePreference = $VerbosePreferenceBackup
+            $Global:VerbosePreference = $verbosePreferenceBackup
         }
         else
         {

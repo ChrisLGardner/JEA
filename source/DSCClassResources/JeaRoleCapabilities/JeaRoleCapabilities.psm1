@@ -92,25 +92,25 @@ class JeaRoleCapabilities
 
     hidden [boolean] ValidatePath()
     {
-        $FileObject = [System.IO.FileInfo]::new($this.Path)
-        Write-Verbose -Message "Validating Path: $($FileObject.Fullname)"
-        Write-Verbose -Message "Checking file extension is psrc for: $($FileObject.Fullname)"
-        if ($FileObject.Extension -ne '.psrc')
+        $fileObject = [System.IO.FileInfo]::new($this.Path)
+        Write-Verbose -Message "Validating Path: $($fileObject.Fullname)"
+        Write-Verbose -Message "Checking file extension is psrc for: $($fileObject.Fullname)"
+        if ($fileObject.Extension -ne '.psrc')
         {
-            Write-Verbose -Message "Doesn't have psrc extension for: $($FileObject.Fullname)"
+            Write-Verbose -Message "Doesn't have psrc extension for: $($fileObject.Fullname)"
             return $false
         }
 
-        Write-Verbose -Message "Checking parent forlder is RoleCapabilities for: $($FileObject.Fullname)"
-        if ($FileObject.Directory.Name -ne 'RoleCapabilities')
+        Write-Verbose -Message "Checking parent forlder is RoleCapabilities for: $($fileObject.Fullname)"
+        if ($fileObject.Directory.Name -ne 'RoleCapabilities')
         {
-            Write-Verbose -Message "Parent folder isn't RoleCapabilities for: $($FileObject.Fullname)"
+            Write-Verbose -Message "Parent folder isn't RoleCapabilities for: $($fileObject.Fullname)"
             return $false
         }
 
-        Write-Verbose -Message "Checking Folder is in PSModulePath is psrc for: $($FileObject.Fullname)"
+        Write-Verbose -Message "Checking Folder is in PSModulePath is psrc for: $($fileObject.Fullname)"
         $PSModulePathRegexPattern = (([Regex]::Escape($env:PSModulePath)).TrimStart(';').TrimEnd(';') -replace ';', '|')
-        if ($FileObject.FullName -notmatch $PSModulePathRegexPattern)
+        if ($fileObject.FullName -notmatch $PSModulePathRegexPattern)
         {
             Write-Verbose -Message "Path isn't part of PSModulePath, valid values are:"
             foreach ($path in $env:PSModulePath -split ';')
@@ -120,8 +120,7 @@ class JeaRoleCapabilities
             return $false
         }
 
-        Write-Verbose -Message "Path is a valid psrc path. Returning true."
-        #Wait-Debugger
+        Write-Verbose -Message 'Path is a valid psrc path. Returning true.'
         return $true
     }
 
@@ -217,8 +216,8 @@ class JeaRoleCapabilities
             $parameters = Sync-Parameter -Command $cmdlet -Parameters $parameters
             $currentState = Sync-Parameter -Command $cmdlet -Parameters $currentState
             $propertiesAsObject = $cmdlet.Parameters.Keys |
-            Where-Object { $_ -in $parameters.Keys } |
-            Where-Object { $cmdlet.Parameters.$_.ParameterType.FullName -in 'System.Collections.IDictionary', 'System.Collections.Hashtable', 'System.Collections.IDictionary[]', 'System.Object[]' }
+                Where-Object { $_ -in $parameters.Keys } |
+                    Where-Object { $cmdlet.Parameters.$_.ParameterType.FullName -in 'System.Collections.IDictionary', 'System.Collections.Hashtable', 'System.Collections.IDictionary[]', 'System.Object[]' }
             foreach ($p in $propertiesAsObject)
             {
                 if ($cmdlet.Parameters.$p.ParameterType.FullName -in 'System.Collections.Hashtable', 'System.Collections.IDictionary', 'System.Collections.IDictionary[]', 'System.Object[]')
