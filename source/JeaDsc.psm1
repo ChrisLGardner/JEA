@@ -218,7 +218,8 @@ function ConvertTo-Expression
         function Serialize
         {
             param (
-                [Parameter(Mandatory = $true)]
+                [Parameter()]
+                [AllowNull()]
                 [object]$Object,
 
                 [Parameter()]
@@ -231,6 +232,7 @@ function ConvertTo-Expression
             {
                 param (
                     [Parameter()]
+                    [AllowNull()]
                     [string]$Item
                 )
                 "'$($Item.Replace('''', ''''''))'"
@@ -283,7 +285,8 @@ function ConvertTo-Expression
                 function Iterate
                 {
                     param (
-                        [Parameter(Mandatory = $true)]
+                        [Parameter()]
+                        [AllowNull()]
                         [object]$Object,
 
                         [Parameter()]
