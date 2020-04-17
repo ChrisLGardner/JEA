@@ -172,7 +172,7 @@ Configuration DscDiagnostic {
         Name            = 'DSC'
         RoleDefinitions = '@{ Everyone = @{ RoleCapabilities = "ReadDiagnosticsRole" } }'
         SessionType     = 'RestrictedRemoteServer'
-        ModulesToImport = 'PSDesiredStateConfiguration'
+        ModulesToImport = 'PSDesiredStateConfiguration', 'xDscDiagnostics'
     }
 }
 
