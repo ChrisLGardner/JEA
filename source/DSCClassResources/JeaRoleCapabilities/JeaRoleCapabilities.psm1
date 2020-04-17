@@ -202,6 +202,8 @@ class JeaRoleCapabilities
 
             if (-not $invalidConfiguration)
             {
+                $parentPath = Split-Path -Path $parameters.Path -Parent
+                mkdir -Path $parentPath -Force
                 New-PSRoleCapabilityFile @parameters
             }
         }
