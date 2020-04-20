@@ -211,6 +211,7 @@ InModuleScope JeaDsc {
 
             It "Should apply the example BasicVisibleCmdlets configuration without throwing" -Skip:$buildBox {
                 Import-Module PSDesiredStateConfiguration
+                Get-DscResource
                 #$configFile = Join-Path -Path $PSScriptRoot -ChildPath 'TestConfigurations\BasicVisibleCmdlets.config.ps1'
                 #. $configFile
 
