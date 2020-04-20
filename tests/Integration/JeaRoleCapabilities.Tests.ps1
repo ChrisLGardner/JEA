@@ -12,11 +12,11 @@ catch [System.IO.FileNotFoundException]
     throw 'DscResource.Test module dependency not found. Please run ".\build.ps1 -Tasks build" first.'
 }
 
-$script:testEnvironment = Initialize-TestEnvironment `
-    -DSCModuleName $script:dscModuleName `
-    -DSCResourceName $script:dscResourceName `
-    -ResourceType 'Mof' `
-    -TestType 'Integration'
+#$script:testEnvironment = Initialize-TestEnvironment `
+#    -DSCModuleName $script:dscModuleName `
+#    -DSCResourceName $script:dscResourceName `
+#    -ResourceType 'Mof' `
+#    -TestType 'Integration'
 
 #Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\TestHelpers\CommonTestHelper.psm1')
 
