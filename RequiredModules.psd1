@@ -4,7 +4,7 @@
         AddToPath  = $true
         Target     = 'output\RequiredModules'
         Parameters = @{
-           Repository = ''
+            Repository = ''
         }
     }
 
@@ -20,12 +20,4 @@
     'DscResource.AnalyzerRules' = 'latest'
     xDscResourceDesigner        = 'latest'
     'DscResource.DocGenerator'  = 'latest'
-
-
-    # PSPKI                       = 'latest'
-    # 'DscResource.Common' = @{
-    #     Target     = 'Source/Modules'
-    #     Version    = 'latest'
-    # }
 }
-
