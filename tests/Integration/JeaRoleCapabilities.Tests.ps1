@@ -3,10 +3,12 @@ Using Module JeaDsc
 $script:dscModuleName = 'JeaDsc'
 $script:dscResourceName = 'JeaRoleCapabilities'
 
-try {
+try
+{
     Import-Module -Name DscResource.Test -Force -ErrorAction 'Stop'
 }
-catch [System.IO.FileNotFoundException] {
+catch [System.IO.FileNotFoundException]
+{
     throw 'DscResource.Test module dependency not found. Please run ".\build.ps1 -Tasks build" first.'
 }
 
@@ -18,7 +20,8 @@ $script:testEnvironment = Initialize-TestEnvironment `
 
 Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\TestHelpers\CommonTestHelper.psm1')
 
-try {
+try
+{
     Describe "Integration testing JeaRoleCapabilities" -Tag Integration {
 
         BeforeEach {
@@ -156,13 +159,13 @@ try {
             }
 
             It "Should create a psrc with 2 function definitions and 2 visible function for those custom function" {
-                $class.FunctionDefinitions = "@{Name = 'Get-ExampleFunction'; ScriptBlock = {Get-Command} }","@{Name = 'Get-OtherExample'; ScriptBlock = {Get-Command} }"
-                $class.VisibleFunctions = 'Get-ExampleFunction','Get-OtherExample'
+                $class.FunctionDefinitions = "@{Name = 'Get-ExampleFunction'; ScriptBlock = {Get-Command} }", "@{Name = 'Get-OtherExample'; ScriptBlock = {Get-Command} }"
+                $class.VisibleFunctions = 'Get-ExampleFunction', 'Get-OtherExample'
                 $class.Set()
 
                 Test-Path -Path $class.Path | Should -Be $true
                 $result = Import-PowerShellDataFile -Path $class.Path
-                $result.VisibleFunctions | Should -Be 'Get-ExampleFunction','Get-OtherExample'
+                $result.VisibleFunctions | Should -Be 'Get-ExampleFunction', 'Get-OtherExample'
                 $result.FunctionDefinitions[0].Name | Should -Be 'Get-ExampleFunction'
                 $result.FunctionDefinitions[0].Scriptblock | Should -Be '{Get-Command}'
                 $result.FunctionDefinitions[0].Scriptblock | Should -BeOfType [ScriptBlock]
@@ -231,7 +234,7 @@ try {
 
                 $results = Import-PowerShellDataFile -Path 'TestDrive:\WildcardVisibleCmdlets\RoleCapabilities\WildcardVisibleCmdlets.psrc'
 
-                $results.VisibleCmdlets | Should -Be 'Get-*','DnsServer\*'
+                $results.VisibleCmdlets | Should -Be 'Get-*', 'DnsServer\*'
             }
         }
 
