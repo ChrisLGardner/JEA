@@ -3,44 +3,23 @@ Using Module JeaDsc
 $script:dscModuleName = 'JeaDsc'
 $script:dscResourceName = 'JeaRoleCapabilities'
 
-try
-{
+try {
     Import-Module -Name DscResource.Test -Force -ErrorAction 'Stop'
 }
-catch [System.IO.FileNotFoundException]
-{
+catch [System.IO.FileNotFoundException] {
     throw 'DscResource.Test module dependency not found. Please run ".\build.ps1 -Tasks build" first.'
 }
 
-#$script:testEnvironment = Initialize-TestEnvironment `
-#    -DSCModuleName $script:dscModuleName `
-#    -DSCResourceName $script:dscResourceName `
-#    -ResourceType 'Mof' `
-#    -TestType 'Integration'
+$script:testEnvironment = Initialize-TestEnvironment `
+    -DSCModuleName $script:dscModuleName `
+    -DSCResourceName $script:dscResourceName `
+    -ResourceType 'Mof' `
+    -TestType 'Integration'
 
-#Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\TestHelpers\CommonTestHelper.psm1')
+Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath '..\TestHelpers\CommonTestHelper.psm1')
 
-
-InModuleScope JeaDsc {
+try {
     Describe "Integration testing JeaRoleCapabilities" -Tag Integration {
-
-        BeforeAll {
-            #$modulePath = Resolve-Path -Path $PSScriptRoot\..\..
-            #$oldPsModulePath = $Env:PSModulePath
-            #$env:PSModulePath += ";$modulePath"
-            #[System.Environment]::SetEnvironmentVariable('PSModulePath', $env:PSModulePath, 'Machine')
-            #$env:PSModulePath += ";TestDrive:\"
-
-            $buildBox = $true
-            #if ($env:SYSTEM_DEFAULTWORKINGDIRECTORY) {
-                winrm quickconfig -quiet -force
-                $buildBox = $false
-            #}
-        }
-
-        AfterAll {
-            #[System.Environment]::SetEnvironmentVariable('PSModulePath', $oldPsModulePath, 'Machine')
-        }
 
         BeforeEach {
             $class = [JeaRoleCapabilities]::New()
@@ -203,7 +182,6 @@ InModuleScope JeaDsc {
                 $class.Set()
 
                 Test-Path -Path 'TestDrive:\RemoveMe\RoleCapabilities\ExampleRole.psrc' | Should -Be $false
-
             }
         }
 
@@ -301,4 +279,8 @@ InModuleScope JeaDsc {
             }
         }
     }
+}
+finally
+{
+    Restore-TestEnvironment -TestEnvironment $script:testEnvironment
 }
