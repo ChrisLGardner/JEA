@@ -1,10 +1,8 @@
-<#
-Using Module JeaDsc
+using module JeaDsc
 
-Describe "Testing Convert-StringToObject" {
-    Context "Test string to hashtable conversion" {
-
-        It "Should return a string and a hashtable when passed as a single string" {
+Describe 'Testing Convert-StringToObject' {
+    Context 'Test string to hashtable conversion' {
+        It 'Should return a string and a hashtable when passed as a single string' {
             $Output = Convert-StringToObject -InputString "'Invoke-Cmdlet1', @{ Name = 'Invoke-Cmdlet2'}"
 
             $Output[0] | Should -Be 'Invoke-Cmdlet1'
@@ -12,7 +10,7 @@ Describe "Testing Convert-StringToObject" {
             $Output[1].Name | Should -Be 'Invoke-Cmdlet2'
         }
 
-        It "Should return a string and a hashtable when passed as an array of strings" {
+        It 'Should return a string and a hashtable when passed as an array of strings' {
             $Output = Convert-StringToObject -InputString 'Invoke-Cmdlet1', "@{'Name' = 'Invoke-Cmdlet2'}"
 
             $Output[0] | Should -Be 'Invoke-Cmdlet1'
@@ -20,7 +18,7 @@ Describe "Testing Convert-StringToObject" {
             $Output[1].Name | Should -Be 'Invoke-Cmdlet2'
         }
 
-        It "Should return 2 hashtables with one having a nested hashtable" {
+        It 'Should return 2 hashtables with one having a nested hashtable' {
             $Output = Convert-StringToObject -InputString "@{Name = 'Invoke-Cmdlet'; Parameters = @{Name = 'Parameter1';Value = 'Value1'},@{Name = 'Parameter2'; Value = 'Value2'}},@{Name = 'Invoke-Cmdlet2'}"
 
             $Output.Count | Should -Be 2
@@ -34,33 +32,35 @@ Describe "Testing Convert-StringToObject" {
             $Output[1].Name | Should -Be 'Invoke-Cmdlet2'
         }
 
-        It "Should return a single string when passed only one cmdlet" {
-            $Output = Convert-StringToObject -InputString "Invoke-Cmdlet"
+        It 'Should return a single string when passed only one cmdlet' {
+            $Output = Convert-StringToObject -InputString 'Invoke-Cmdlet'
 
-            $Output | Should -Be "Invoke-Cmdlet"
+            $Output | Should -Be 'Invoke-Cmdlet'
         }
 
-        It "Should return a single hashtable when passed only one hashtable" {
+        It 'Should return a single hashtable when passed only one hashtable' {
             $Output = Convert-StringToObject -InputString "@{Name = 'Invoke-Cmdlet'}"
 
             $Output | Should -BeOfType [Hashtable]
             $Output.Name | Should -Be 'Invoke-Cmdlet'
         }
 
-        It "Should return 2 strings when passed 2 comma separated strings in a single string" {
+        It 'Should return 2 strings when passed 2 comma separated strings in a single string' {
             $Output = Convert-StringToObject -InputString "'Invoke-Cmdlet','Invoke-Cmdlet2'"
 
-            $Output | Should -Be 'Invoke-Cmdlet','Invoke-Cmdlet2'
+            $Output | Should -Be 'Invoke-Cmdlet', 'Invoke-Cmdlet2'
         }
 
-        It "Should not call New-Item when parsing the string input that contains an escaped subexpression" {
-            Mock -CommandName New-Item -MockWith {}
+        It 'Should not call New-Item when parsing the string input that contains an escaped subexpression' {
+            Mock -CommandName New-Item -MockWith {
+
+            }
             $null = Convert-StringToObject -InputString "`$(New-Item File.txt),'Invoke-Cmdlet'"
 
             Assert-MockCalled -CommandName New-Item -Times 0 -Scope It
         }
 
-        It "Should return a single hashtable when passed one with multiple nested properties." {
+        It 'Should return a single hashtable when passed one with multiple nested properties.' {
             $Output = Convert-StringToObject -InputString "@{Name = 'Invoke-Cmdlet'; Parameters = @{Name = 'Parameter1';Value = 'Value1'},@{Name = 'Parameter2'; Value = 'Value2'}}"
 
             $Output | Should -BeOfType [Hashtable]
@@ -71,18 +71,20 @@ Describe "Testing Convert-StringToObject" {
             $Output.Parameters[1].Value | Should -Be 'Value2'
         }
 
-        It "Should write an error when not provided with a hashtable, string or combination" {
-            {$Output = Convert-StringToObject -InputString "`$(Get-Help)" -ErrorAction Stop} | Should -Throw
+        It 'Should write an error when not provided with a hashtable, string or combination' {
+            {
+                $Output = Convert-StringToObject -InputString "`$(Get-Help)" -ErrorAction Stop
+            } | Should -Throw
         }
 
-        It "Should return a ScriptBlock when passed one as a value in a hashtable" {
+        It 'Should return a ScriptBlock when passed one as a value in a hashtable' {
             $Output = Convert-StringToObject -InputString "@{Name = 'Invoke-Function'; ScriptBlock = { Get-Command } }"
 
-            $Output.Name | Should -Be "Invoke-Function"
+            $Output.Name | Should -Be 'Invoke-Function'
             $Output.ScriptBlock | Should -BeOfType [ScriptBlock]
         }
 
-        It "Should return a ScriptBlock when passed a multiline string as the value of ScriptBlock property in a hashtable" {
+        It 'Should return a ScriptBlock when passed a multiline string as the value of ScriptBlock property in a hashtable' {
             $Hashtable = @"
             @{Name = 'Invoke-Function'; ScriptBlock = {
                 Get-Command
@@ -92,10 +94,8 @@ Describe "Testing Convert-StringToObject" {
 "@
             $Output = Convert-StringToObject -InputString $Hashtable
 
-            $Output.Name | Should -Be "Invoke-Function"
+            $Output.Name | Should -Be 'Invoke-Function'
             $Output.ScriptBlock | Should -BeOfType [ScriptBlock]
         }
     }
-
 }
-#>
