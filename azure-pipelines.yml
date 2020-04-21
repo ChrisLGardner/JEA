@@ -47,50 +47,120 @@ stages:
     dependsOn: Build
     jobs:
 
-      - job: test_windows_ps
-        displayName: 'Windows (Windows PowerShell)'
-        timeoutInMinutes: 0
-        pool:
-          vmImage: 'windows-2019'
-        steps:
-          - task: DownloadBuildArtifacts@0
-            displayName: 'Download Build Artifact'
-            inputs:
-              buildType: 'current'
-              downloadType: 'single'
-              artifactName: 'output'
-              downloadPath: '$(Build.SourcesDirectory)'
+    - job: Test_HQRM
+      displayName: 'HQRM'
+      pool:
+        vmImage: 'windows-2019'
+      timeoutInMinutes: 0
+      steps:
+        - task: DownloadBuildArtifacts@0
+          displayName: 'Download Build Artifact'
+          inputs:
+            buildType: 'current'
+            downloadType: 'single'
+            artifactName: 'output'
+            downloadPath: '$(Build.SourcesDirectory)'
 
-          - powershell: |
-              $repositoryOwner,$repositoryName = $env:BUILD_REPOSITORY_NAME -split '/'
-              echo "##vso[task.setvariable variable=RepositoryOwner;isOutput=true]$repositoryOwner"
-              echo "##vso[task.setvariable variable=RepositoryName;isOutput=true]$repositoryName"
-            name: dscBuildVariable
-            displayName: 'Set Environment Variables'
+        - task: PowerShell@2
+          name: test
+          displayName: 'Run HQRM Test'
+          inputs:
+            filePath: './build.ps1'
+            arguments: '-Tasks hqrmtest'
+            pwsh: false
 
-          - task: PowerShell@2
-            name: test
-            displayName: 'Run Tests'
-            inputs:
-              filePath: './build.ps1'
-              arguments: '-tasks test'
-              pwsh: false
+        - task: PublishTestResults@2
+          displayName: 'Publish Test Results'
+          inputs:
+            testResultsFormat: 'NUnit'
+            testResultsFiles: 'output/testResults/NUnit*.xml'
+            testRunTitle: 'HQRM'
+          condition: succeededOrFailed()
 
-          - task: PublishTestResults@2
-            displayName: 'Publish Test Results'
-            condition: succeededOrFailed()
-            inputs:
-              testResultsFormat: 'NUnit'
-              testResultsFiles: 'output/testResults/NUnit*.xml'
-              testRunTitle: 'Windows Server Core (Windows PowerShell)'
+    - job: Test_Integration_2019
+      displayName: 'Integration (Windows Server 2019)'
+      pool:
+        vmImage: 'windows-2019'
+      timeoutInMinutes: 0
+      steps:
+        - task: DownloadBuildArtifacts@0
+          displayName: 'Download Build Artifact'
+          inputs:
+            buildType: 'current'
+            downloadType: 'single'
+            artifactName: 'output'
+            downloadPath: '$(Build.SourcesDirectory)'
 
-          - task: PublishCodeCoverageResults@1
-            displayName: 'Publish Code Coverage'
-            condition: succeededOrFailed()
-            inputs:
-              codeCoverageTool: 'JaCoCo'
-              summaryFileLocation: 'output/testResults/CodeCov*.xml'
-              pathToSources: '$(Build.SourcesDirectory)/output/$(dscBuildVariable.RepositoryName)'
+        - task: PowerShell@2
+          name: configureWinRM
+          displayName: 'Configure WinRM'
+          inputs:
+            targetType: 'inline'
+            script: 'winrm quickconfig -quiet'
+            pwsh: false
+
+        - powershell: |
+            Set-Service -Name wuauserv -StartupType Manual -Verbose
+            Start-Service -name wuauserv -Verbose
+        - task: PowerShell@2
+          name: test
+          displayName: 'Run Integration Test'
+          inputs:
+            filePath: './build.ps1'
+            arguments: "-Tasks test -PesterScript 'tests/Integration' -CodeCoverageThreshold 0"
+            pwsh: false
+
+        - task: PublishTestResults@2
+          displayName: 'Publish Test Results'
+          inputs:
+            testResultsFormat: 'NUnit'
+            testResultsFiles: 'output/testResults/NUnit*.xml'
+            testRunTitle: 'Integration (Windows Server 2016)'
+          condition: succeededOrFailed()
+
+    - job: Test_Unit_2019
+      displayName: 'Unit (Windows Server 2019)'
+      pool:
+        vmImage: 'windows-2019'
+      timeoutInMinutes: 0
+      steps:
+        - powershell: |
+            $repositoryOwner,$repositoryName = $env:BUILD_REPOSITORY_NAME -split '/'
+            echo "##vso[task.setvariable variable=RepositoryOwner;isOutput=true]$repositoryOwner"
+            echo "##vso[task.setvariable variable=RepositoryName;isOutput=true]$repositoryName"
+          name: dscBuildVariable
+          displayName: 'Set Environment Variables'
+        - task: DownloadBuildArtifacts@0
+          displayName: 'Download Build Artifact'
+          inputs:
+            buildType: 'current'
+            downloadType: 'single'
+            artifactName: 'output'
+            downloadPath: '$(Build.SourcesDirectory)'
+
+        - task: PowerShell@2
+          name: test
+          displayName: 'Run Unit Test'
+          inputs:
+            filePath: './build.ps1'
+            arguments: "-Tasks test -PesterScript 'tests/Unit'"
+            pwsh: false
+
+        - task: PublishTestResults@2
+          displayName: 'Publish Test Results'
+          inputs:
+            testResultsFormat: 'NUnit'
+            testResultsFiles: 'output/testResults/NUnit*.xml'
+            testRunTitle: 'Unit (Windows Server 2016)'
+          condition: succeededOrFailed()
+
+        - task: PublishCodeCoverageResults@1
+          displayName: 'Publish Code Coverage'
+          condition: succeededOrFailed()
+          inputs:
+            codeCoverageTool: 'JaCoCo'
+            summaryFileLocation: 'output/testResults/CodeCov*.xml'
+            pathToSources: '$(Build.SourcesDirectory)/output/$(DscBuildVariable.RepositoryName)'
 
   - stage: Deploy
     dependsOn: Test
