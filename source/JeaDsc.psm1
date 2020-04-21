@@ -635,7 +635,7 @@ function Convert-StringToObject
                         if ($argumentAst -is [HashtableAst])
                         {
                             $ht = [Hashtable]$argumentAst.SafeGetValue()
-                            for ($i = 1; $i -lt $ht.Keys.Count; $i++)
+                            for ($i = 0; $i -lt $ht.Keys.Count; $i++)
                             {
                                 $value = $ht[([array]$ht.Keys)[$i]]
                                 if ($value -is [scriptblock])
