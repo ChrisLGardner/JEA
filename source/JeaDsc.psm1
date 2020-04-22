@@ -1153,13 +1153,21 @@ function Sync-Parameter
     param (
         [Parameter(Mandatory = $true)]
         [ValidateScript( {
-                    $_ -is [System.Management.Automation.FunctionInfo] -or $_ -is [System.Management.Automation.CmdletInfo] -or $_ -is [System.Management.Automation.ExternalScriptInfo]
+                    $_ -is [System.Management.Automation.FunctionInfo] -or
+                    $_ -is [System.Management.Automation.CmdletInfo] -or
+                    $_ -is [System.Management.Automation.ExternalScriptInfo] -or
+                    $_ -is [System.Management.Automation.AliasInfo]
         })]
         [object]$Command,
 
         [Parameter(Mandatory = $true)]
         [hashtable]$Parameters
     )
+
+    if ($Command -is [System.Management.Automation.AliasInfo] -and $Command.Definition -like 'PesterMock*')
+    {
+        $Command = Get-Command -Name $Command.Name
+    }
 
     $commonParameters = [System.Management.Automation.Internal.CommonParameters].GetProperties().Name
     $commandParameterKeys = $Command.Parameters.Keys.GetEnumerator() | ForEach-Object { $_ }
