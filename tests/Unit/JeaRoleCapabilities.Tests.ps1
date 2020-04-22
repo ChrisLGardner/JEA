@@ -1,4 +1,4 @@
-using module JeaDsc
+using module ..\..\output\JeaDsc\0.91.0\JeaDsc.psd1
 
 InModuleScope JeaRoleCapabilities {
     Describe 'Testing JeaRoleCapabilities' {
@@ -17,29 +17,23 @@ InModuleScope JeaRoleCapabilities {
                     )
                 }
             }
-            Mock -CommandName New-PSRoleCapabilityFile -MockWith {
 
-            }
-            Mock -CommandName Test-Path -MockWith {
-                $true
-            } -ParameterFilter {
+            Mock -CommandName Test-Path -MockWith { $true } -ParameterFilter {
                 $Path -eq 'TestDrive:\ModuleFolder\RoleCapabilities\ExampleRole.psrc' -or
                 $Path -eq 'C:\ModuleFolder\RoleCapabilities\ExampleRole.psrc'
             }
-            Mock -CommandName Test-Path -MockWith {
-                $false
-            }
-            Mock -CommandName Write-Error -MockWith {
 
-            }
-            Mock -CommandName New-Item -MockWith {
+            Mock -CommandName Test-Path -MockWith { $false }
 
-            }
-            Mock -CommandName Remove-Item -MockWith {
+            Mock -CommandName New-PSRoleCapabilityFile -MockWith { }
 
-            }
+            Mock -CommandName Write-Error -MockWith { }
 
-            $Env:PSModulePath += ';TestDrive:\;C:\ModuleFolder;C:\OtherModule'
+            Mock -CommandName mkdir -MockWith { $true }
+
+            Mock -CommandName Remove-Item -MockWith { }
+
+            $env:PSModulePath += ';TestDrive:\;C:\ModuleFolder;C:\OtherModule'
         }
 
         BeforeEach {
@@ -50,19 +44,16 @@ InModuleScope JeaRoleCapabilities {
         Context 'Testing ValidatePath method' {
             It "Should return false when the path doesn't end in .psrc" {
                 $class.Path = 'C:\Fake\Path\file.txt'
-
                 $class.ValidatePath() | Should -Be $false
             }
 
             It "Should return false when the path doesn't have RoleCapabilities as the parent folder of the target file" {
                 $class.Path = 'C:\Fake\Path\file.psrc'
-
                 $class.ValidatePath() | Should -Be $false
             }
 
             It "Should return true when the path is a valid path located in Env:PsModulePath, file has a psrc extension and it's parent folder is called RoleCapabilites" {
                 $class.Path = 'C:\Program Files\WindowsPowerShell\Modules\RoleCapabilities\File.psrc'
-
                 $class.ValidatePath() | Should -Be $true
             }
         }
@@ -96,7 +87,6 @@ InModuleScope JeaRoleCapabilities {
 
             It 'Should return false when Ensure is Present and the Path does not exist' {
                 $class.Path = 'C:\OtherModule\RoleCapabilities\ExampleRole.psrc'
-
                 $class.Test() | Should -Be $false
             }
 
@@ -114,14 +104,12 @@ InModuleScope JeaRoleCapabilities {
 
             It 'Should return false when Ensure is Absent and the Path exists' {
                 $class.Ensure = [Ensure]::Absent
-
                 $class.Test() | Should -Be $false
             }
 
             It 'Should return True when Ensure is Absent and the Path does not exist' {
                 $class.Ensure = [Ensure]::Absent
                 $class.Path = 'C:\OtherModule\RoleCapabilities\ExampleRole.psrc'
-
                 $class.Test() | Should -Be $true
             }
         }
@@ -138,7 +126,7 @@ InModuleScope JeaRoleCapabilities {
                 $class.VisibleFunctions = 'Get-Service'
                 $class.Set()
 
-                Assert-MockCalled -CommandName New-Item -Times 1 -Scope It
+                Assert-MockCalled -CommandName mkdir -Times 1 -Scope It
                 Assert-MockCalled -CommandName New-PSRoleCapabilityFile -Times 1 -Scope 1 -ParameterFilter {
                     $VisibleFunctions -eq 'Get-Service'
                 }
@@ -149,7 +137,7 @@ InModuleScope JeaRoleCapabilities {
                 $class.VisibleFunctions = 'New-Example'
                 $class.Set()
 
-                Assert-MockCalled -CommandName New-Item -Times 1 -Scope It
+                Assert-MockCalled -CommandName mkdir -Times 1 -Scope It
                 Assert-MockCalled -CommandName New-PSRoleCapabilityFile -Times 1 -Scope 1 -ParameterFilter {
                     $VisibleFunctions -eq 'New-Example' -and $VisibleCmdlets -eq 'Get-*'
                 }

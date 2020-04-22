@@ -1,4 +1,4 @@
-using module JeaDsc
+using module ..\..\output\JeaDsc\0.91.0\JeaDsc.psd1
 
 Describe 'Testing Convert-StringToObject' {
     Context 'Test string to hashtable conversion' {
