@@ -43,7 +43,7 @@ Describe 'ConvertTo-Expression' {
 			Decimal    = [Decimal]69
 			Single     = [Single]70
 			Double     = [Double]71
-			Adsi       = [ADSI]'WinNT://./Administrator'
+			Adsi       = [ADSI]'WinNT://./Administrators'
 			DateTime   = $DateTime
 			TimeSpan   = $TimeSpan
 			Version    = $Version
