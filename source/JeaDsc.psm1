@@ -170,10 +170,9 @@ function ConvertTo-Expression
             .LINK
             https://www.powershellgallery.com/packages/ConvertFrom-Expression
     #>
-    [CmdletBinding()]
-    [OutputType([ScriptBlock])]
+    [CmdletBinding()][OutputType([scriptblock])]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeLine = $true)]
+        [Parameter(ValueFromPipeLine = $true)]
         [Alias('InputObject')]
         [object]$Object,
 
@@ -201,6 +200,7 @@ function ConvertTo-Expression
         [Parameter()]
         [string]$NewLine = [System.Environment]::NewLine
     )
+
     begin
     {
         if (-not $PSCmdlet.MyInvocation.ExpectingInput)
@@ -214,27 +214,30 @@ function ConvertTo-Expression
                 $Concatenate = $true
             }
         }
+
+        $listItem = $null
         $tab = $IndentChar * $Indentation
+
         function Serialize
         {
             param (
                 [Parameter()]
-                [AllowNull()]
                 [object]$Object,
 
                 [Parameter()]
-                $Iteration,
+                [int]$Iteration,
 
                 [Parameter()]
                 $Indent
             )
+
             function Quote
             {
                 param (
                     [Parameter()]
-                    [AllowNull()]
                     [string]$Item
                 )
+
                 "'$($Item.Replace('''', ''''''))'"
             }
 
@@ -247,54 +250,95 @@ function ConvertTo-Expression
 
                 if ($Item -Match '[\r\n]')
                 {
-                    "@'$NewLine$item$NewLine'@$NewLine"
+                    "@'$NewLine$Item$NewLine'@$NewLine"
                 }
                 else
                 {
-                    Quote -Item $item
+                    Quote -Item $Item
                 }
             }
+
             function Stringify
             {
                 param        (
                     [Parameter(Mandatory = $true)]
-                    $Object,
+                    [object]$Object,
 
                     [Parameter()]
-                    $Cast = $Type
+                    [string]$Cast = $type,
+
+                    [Parameter()]
+                    [string]$Convert
                 )
 
-                $explicit = $PSBoundparameters.ContainsKey('Cast')
+                $casted = $PSBoundParameters.ContainsKey('Cast')
                 function Prefix
                 {
+                    param (
+                        [Parameter(Mandatory = $true)]
+                        [object]$Object,
+
+                        [Parameter()]
+                        [switch]$Parenthesis
+                    )
+
+                    if ($Convert)
+                    {
+                        if ($listItem)
+                        {
+                            $Object = "($Convert $Object)"
+                        }
+                        else
+                        {
+                            $Object = "$Convert $Object"
+                        }
+                    }
+
+                    if ($Parenthesis)
+                    {
+                        $Object = "($Object)"
+                    }
+
                     if ($Explore)
                     {
                         if ($Strong)
                         {
-                            "[$Type]"
+                            "[$type]$Object"
+                        }
+                        else
+                        {
+                            $Object
                         }
                     }
-                    elseif ($Strong -or $Explicit)
+                    elseif ($Strong -or $casted)
                     {
                         if ($Cast)
                         {
-                            "[$Cast]"
+                            "[$Cast]$Object"
                         }
                     }
+                    else
+                    {
+                        $Object
+                    }
                 }
+
                 function Iterate
                 {
                     param (
                         [Parameter()]
-                        [AllowNull()]
                         [object]$Object,
 
                         [Parameter()]
-                        [switch]$ListItem,
+                        [Switch]$Strong = $Strong,
+
+                        [Parameter()]
+                        [switch]$listItem,
 
                         [Parameter()]
                         [switch]$Level
                     )
+
                     if ($Iteration -lt $Depth)
                     {
                         Serialize -Object $Object -Iteration ($Iteration + 1) -Indent ($Indent + 1 - [int][bool]$Level)
@@ -304,21 +348,22 @@ function ConvertTo-Expression
                         "'...'"
                     }
                 }
+
                 if ($Object -is [string])
                 {
-                    (Prefix) + $Object
+                    Prefix -Object $Object
                 }
                 else
                 {
                     $list = $null
                     $properties = $null
-                    $Methods = $Object.PSObject.Methods.Name
+                    $methods = $Object.PSObject.Methods.Name
 
-                    if ($Methods -Contains 'GetEnumerator')
+                    if ($methods -contains 'GetEnumerator')
                     {
-                        if ($Methods -Contains 'get_Keys' -and $Methods -Contains 'get_Values')
+                        if ($methods -contains 'get_Keys' -and $methods -contains 'get_Values')
                         {
-                            $list = [Ordered]@{ }
+                            $list = [ordered]@{}
                             foreach ($key in $Object.get_Keys())
                             {
                                 $list[(Quote -Item $key)] = Iterate -Object $Object[$key]
@@ -326,43 +371,48 @@ function ConvertTo-Expression
                         }
                         else
                         {
-                            $list = @(foreach ($item in $Object)
+                            $Level = @($Object).Count -eq 1 -or ($null -eq $Indent -and -not $Explore -and -not $Strong)
+                            $StrongItem = $Strong -and $type.Name -eq 'Object[]'
+                            $list = @(foreach ($Item in $Object)
                                 {
-                                    Iterate -Object $item -ListItem -Level:($Count -eq 1 -or ($null -eq $Indent -and -not $Explore -and -not $Strong))
-                            })
+                                    Iterate -Object $Item -ListItem -Level:$Level -Strong:$StrongItem
+                                }
+                            )
                         }
                     }
                     else
                     {
-                        $properties = $Object.PSObject.Properties | Where-Object { $_.MemberType -eq 'Property' }
+                        $properties = $Object.PSObject.Properties | Where-Object MemberType -eq Property
+
                         if (-not $properties)
                         {
-                            $properties = $Object.PSObject.Properties | Where-Object { $_.MemberType -eq 'NoteProperty' }
+                            $properties = $Object.PSObject.Properties | Where-Object MemberType -eq NoteProperty
                         }
                         if ($properties)
                         {
-                            $List = [Ordered]@{ }
-                            foreach ($Property in $Properties)
+                            $list = [ordered]@{}
+                            foreach ($property in $properties)
                             {
-                                $list[(Quote $Property.Name)] = Iterate -Object $Property.Value
+                                $list[(Quote -Item $property.Name)] = Iterate -Object $property.Value
                             }
                         }
                     }
-                    if ($list -is [Array])
+                    if ($list -is [array])
                     {
-                        if (-not $Explicit)
+                        if (-not $casted -and ($type.Name -eq 'Object[]' -or "$type".Contains('.')))
                         {
                             $Cast = 'array'
                         }
+
                         if (-not $list.Count)
                         {
-                            (Prefix) + '@()'
+                            Prefix -Object '@()'
                         }
                         elseif ($list.Count -eq 1)
                         {
                             if ($Strong)
                             {
-                                (Prefix) + "$list"
+                                Prefix -Object "$list"
                             }
                             elseif ($listItem)
                             {
@@ -373,100 +423,100 @@ function ConvertTo-Expression
                                 ",$list"
                             }
                         }
-                        elseif ($Indent -ge $Expand - 1)
+                        elseif ($Indent -ge $Expand - 1 -or $type.GetElementType().IsPrimitive)
                         {
-                            $content = if ($Expand -ge 0)
+                            $Content = if ($Expand -ge 0)
                             {
-                                $list -Join ', '
+                                $list -join ', '
                             }
                             else
                             {
-                                $list -Join ','
+                                $list -join ','
                             }
-                            if ($listItem -or $Strong)
-                            {
-                                (Prefix) + "($content)"
-                            }
-                            else
-                            {
-                                $content
-                            }
+                            Prefix -Object $Content -Parenthesis:($listItem -or $Strong)
                         }
-                        elseif ($null -eq $Indent -and -not $Strong)
+                        elseif ($null -eq $Indent -and -not $Strong -and -not $Convert)
                         {
-                            $list -Join ",$NewLine"
+                            Prefix -Object ($list -join ",$NewLine")
                         }
                         else
                         {
                             $lineFeed = $NewLine + ($tab * $Indent)
-                            $content = "$lineFeed$tab" + ($List -Join ",$lineFeed$tab")
+                            $content = "$lineFeed$tab" + ($list -join ",$lineFeed$tab")
+                            if ($Convert)
+                            {
+                                $content = "($content)"
+                            }
                             if ($listItem -or $Strong)
                             {
-                                (Prefix) + "($content$lineFeed)"
+                                Prefix -Parenthesis "$content$lineFeed"
                             }
                             else
                             {
-                                $content
+                                Prefix -Object $content
                             }
                         }
                     }
                     elseif ($list -is [System.Collections.Specialized.OrderedDictionary])
                     {
-                        if (-not $Explicit)
+                        if (-not $casted)
                         {
                             if ($properties)
                             {
-                                $explicit = $true
-                                $cast = 'pscustomobject'
+                                $casted = $true
+                                $Cast = 'pscustomobject'
                             }
                             else
                             {
-                                $cast = 'hashtable'
+                                $Cast = 'hashtable'
                             }
                         }
                         if (-not $list.Count)
                         {
-                            (Prefix) + '@{}'
+                            Prefix -Object '@{}'
                         }
                         elseif ($Expand -lt 0)
                         {
-                            (Prefix) + '@{' + (@(foreach ($key in $list.get_Keys())
-                                    {
-                                        "$key=$($list.$key)"
-                            }) -Join ';') + '}'
+                            Prefix -Object ('@{' + (@(foreach ($key in $list.get_Keys())
+                                        {
+                                            "$key=$($list.$key)"
+                                        }
+                            ) -join ';') + '}')
                         }
                         elseif ($list.Count -eq 1 -or $Indent -ge $Expand - 1)
                         {
-                            (Prefix) + '@{' + (@(foreach ($key in $list.get_Keys())
-                                    {
-                                        "$key = $($list.$key)"
-                            }) -Join '; ') + '}'
+                            Prefix -Object ('@{' + (@(foreach ($key in $list.get_Keys())
+                                        {
+                                            "$key = $($list.$key)"
+                                        }
+                            ) -join '; ') + '}')
                         }
                         else
                         {
                             $lineFeed = $NewLine + ($tab * $Indent)
-                            (Prefix) + "@{$lineFeed$tab" + (@(foreach ($key in $list.get_Keys())
-                                    {
-                                        if (($list.$key)[0] -NotMatch '[\S]')
+                            Prefix ("@{$lineFeed$tab" + (@(foreach ($key in $list.get_Keys())
                                         {
-                                            "$key =$($list.$key)".TrimEnd()
+                                            if (($list.$key)[0] -NotMatch '[\S]')
+                                            {
+                                                "$key =$($list.$key)".TrimEnd()
+                                            }
+                                            else
+                                            {
+                                                "$key = $($list.$key)".TrimEnd()
+                                            }
                                         }
-                                        else
-                                        {
-                                            "$key = $($list.$key)".TrimEnd()
-                                        }
-                            }) -Join "$lineFeed$tab") + "$lineFeed}"
+                            ) -join "$lineFeed$tab") + "$lineFeed}")
                         }
                     }
                     else
                     {
-                        (Prefix) + ",$list"
+                        Prefix -Object ",$list"
                     }
                 }
             }
             if ($null -eq $Object)
             {
-                '$null'
+                "`$null"
             }
             else
             {
@@ -482,11 +532,15 @@ function ConvertTo-Expression
                         Stringify -Object '$false'
                     }
                 }
-                elseif ($Object -is [char])
+                elseif ($Object -is [adsi])
                 {
-                    Stringify -Object "'$($Object)'" -Cast $Type
+                    Stringify -Object "'$($Object.ADsPath)'" $type
                 }
-                elseif ($Type.IsPrimitive)
+                elseif ('Char', 'mailaddress', 'Regex', 'Semver', 'Type', 'Version', 'Uri' -contains $type.Name)
+                {
+                    Stringify -Object "'$($Object)'" $type
+                }
+                elseif ($type.IsPrimitive)
                 {
                     Stringify -Object "$Object"
                 }
@@ -494,27 +548,27 @@ function ConvertTo-Expression
                 {
                     Stringify -Object (Here $Object)
                 }
-                elseif ($Object -is [datetime])
+                elseif ($Object -is [securestring])
                 {
-                    Stringify -Object "'$($Object.ToString('o'))'" -Cast $Type
+                    Stringify -Object "'$($Object | ConvertFrom-SecureString)'" -Convert 'ConvertTo-SecureString'
                 }
-                elseif ($Object -is [System.Version] -or $Type.Name -eq 'SemVer')
+                elseif ($Object -is [pscredential])
                 {
-                    Stringify -Object "'$Object'" -Cast $Type
+                    Stringify -Object $Object.Username, $Object.Password -Convert 'New-Object PSCredential'
                 }
-                elseif ($Type.Name -eq 'SemanticVersion')
+                elseif ($Object -is [System.DateTime])
                 {
-                    Stringify -Object "'$Object'" -Cast semver
+                    Stringify -Object "'$($Object.ToString('o'))'" $type
                 }
                 elseif ($Object -is [System.Enum])
                 {
-                    if ($Strong)
+                    if ("$type".Contains('.'))
                     {
-                        Stringify -Object "'$Object'" -Cast $Type
+                        Stringify -Object "$(0 + $Object)"
                     }
                     else
                     {
-                        Stringify -Object "$(0 + $Object)"
+                        Stringify -Object "'$Object'" $type
                     }
                 }
                 elseif ($Object -is [scriptblock])
@@ -528,7 +582,7 @@ function ConvertTo-Expression
                         Stringify -Object "{$Object}"
                     }
                 }
-                elseif ($Object -is [System.RuntimeTypeHandle])
+                elseif ($Object -is [RuntimeTypeHandle])
                 {
                     Stringify -Object "$($Object.Value)"
                 }
@@ -547,19 +601,19 @@ function ConvertTo-Expression
                     $xw.Indentation = $Indentation
                     $xw.IndentChar = $IndentChar
                     $Object.WriteContentTo($xw)
-                    Stringify -Object (Here -Item $sw) -Cast $Type
+                    Stringify -Object (Here -Item $sw) -Cast $type
                 }
                 elseif ($Object -is [System.Data.DataTable])
                 {
                     Stringify -Object $Object.Rows
                 }
-                elseif ($Type.Name -eq 'OrderedDictionary')
+                elseif ($type.Name -eq 'OrderedDictionary')
                 {
-                    Stringify -Object $Object -Cast ordered
+                    Stringify -Object $Object ordered
                 }
                 elseif ($Object -is [ValueType])
                 {
-                    Stringify -Object "'$($Object)'" -Cast $Type
+                    Stringify -Object "'$($Object)'" -Cast $type
                 }
                 else
                 {
@@ -573,7 +627,7 @@ function ConvertTo-Expression
         $expression = (Serialize -Object $Object).TrimEnd()
         try
         {
-            [ScriptBlock]::Create($expression)
+            [scriptblock]::Create($expression)
         }
         catch
         {
