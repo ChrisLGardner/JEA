@@ -20,7 +20,13 @@ function Test-Format
 	)
 
 	$Object = &([ScriptBlock]::Create("$Expression"))
-	$Actual = ConvertTo-Expression $Object -Strong:$Strong -Expand $Expand #-Indentation 4 -IndentChar ' '
+	$Actual = ConvertTo-Expression $Object -Strong:$Strong -Expand $Expand
+	Write-Host --------------------------------------------------------------------
+	$Expression | Write-Host
+	Write-Host -----------------------------------
+	$Actual | Write-Host
+	Write-Host --------------------------------------------------------------------
+
 	It "$Expression" { "$Actual" | Should -Be "$Expression" }
 }
 
