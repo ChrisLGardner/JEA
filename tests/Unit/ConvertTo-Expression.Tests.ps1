@@ -21,11 +21,11 @@ function Test-Format
 
 	$Object = &([ScriptBlock]::Create("$Expression"))
 	$Actual = ConvertTo-Expression $Object -Strong:$Strong -Expand $Expand
-	Write-Host --------------------------------------------------------------------
-	$Expression | Write-Host
-	Write-Host -----------------------------------
-	$Actual | Write-Host
-	Write-Host --------------------------------------------------------------------
+	#Write-Host --------------------------------------------------------------------
+	#$Expression | Write-Host
+	#Write-Host -----------------------------------
+	#$Actual | Write-Host
+	#Write-Host --------------------------------------------------------------------
 
 	It "$Expression" { "$Actual" | Should -Be "$Expression" }
 }
@@ -503,7 +503,7 @@ World
 	'Int' = 67
 	'Double' = 1.2
 	'Long' = 1234567890123456
-	'DateTime' = [datetime]'1963-10-07T17:56:53.8139055+02:00'
+	'DateTime' = [datetime]'1963-10-07T17:56:53.8139055'
 	'Version' = [version]'1.2.34567.890'
 	'Guid' = [guid]'5f167621-6abe-4153-a26c-f643e1716720'
 	'Script' = {2 * 3}
@@ -686,7 +686,7 @@ World
 	'Int' = [int]67
 	'Double' = [double]1.2
 	'Long' = [long]1234567890123456
-	'DateTime' = [datetime]'1963-10-07T17:56:53.8139055+02:00'
+	'DateTime' = [datetime]'1963-10-07T17:56:53.8139055'
 	'Version' = [version]'1.2.34567.890'
 	'Guid' = [guid]'5f167621-6abe-4153-a26c-f643e1716720'
 	'Script' = [scriptblock]{2 * 3}
@@ -846,7 +846,7 @@ World
 	'Int' = 67
 	'Double' = 1.2
 	'Long' = 1234567890123456
-	'DateTime' = [datetime]'1963-10-07T17:56:53.8139055+02:00'
+	'DateTime' = [datetime]'1963-10-07T17:56:53.8139055'
 	'Version' = [version]'1.2.34567.890'
 	'Guid' = [guid]'5f167621-6abe-4153-a26c-f643e1716720'
 	'Script' = {2 * 3}
@@ -996,7 +996,7 @@ World
 	'Int' = [int]67
 	'Double' = [double]1.2
 	'Long' = [long]1234567890123456
-	'DateTime' = [datetime]'1963-10-07T17:56:53.8139055+02:00'
+	'DateTime' = [datetime]'1963-10-07T17:56:53.8139055'
 	'Version' = [version]'1.2.34567.890'
 	'Guid' = [guid]'5f167621-6abe-4153-a26c-f643e1716720'
 	'Script' = [scriptblock]{2 * 3}
@@ -1054,7 +1054,7 @@ World
 Hello
 World
 '@
-; 'Int' = 67; 'Double' = 1.2; 'Long' = 1234567890123456; 'DateTime' = [datetime]'1963-10-07T17:56:53.8139055+02:00'; 'Version' = [version]'1.2.34567.890'; 'Guid' = [guid]'5f167621-6abe-4153-a26c-f643e1716720'; 'Script' = {2 * 3}; 'Array' = 'One', 'Two', 'Three', 'Four'; 'ByteArray' = 1, 2, 3; 'StringArray' = 'One', 'Two', 'Three'; 'EmptyArray' = @(); 'SingleValueArray' = ,'one'; 'SubArray' = 'One', ('Two', 'Three'), 'Four'; 'HashTable' = @{'Name' = 'Value'}; 'Ordered' = [ordered]@{'One' = 1; 'Two' = 2; 'Three' = 3; 'Four' = 4}; 'Object' = [pscustomobject]@{'Name' = 'Value'}}
+; 'Int' = 67; 'Double' = 1.2; 'Long' = 1234567890123456; 'DateTime' = [datetime]'1963-10-07T17:56:53.8139055'; 'Version' = [version]'1.2.34567.890'; 'Guid' = [guid]'5f167621-6abe-4153-a26c-f643e1716720'; 'Script' = {2 * 3}; 'Array' = 'One', 'Two', 'Three', 'Four'; 'ByteArray' = 1, 2, 3; 'StringArray' = 'One', 'Two', 'Three'; 'EmptyArray' = @(); 'SingleValueArray' = ,'one'; 'SubArray' = 'One', ('Two', 'Three'), 'Four'; 'HashTable' = @{'Name' = 'Value'}; 'Ordered' = [ordered]@{'One' = 1; 'Two' = 2; 'Three' = 3; 'Four' = 4}; 'Object' = [pscustomobject]@{'Name' = 'Value'}}
 "@
 
 	}
@@ -1100,7 +1100,7 @@ World
 Hello
 World
 '@
-; 'Int' = [int]67; 'Double' = [double]1.2; 'Long' = [long]1234567890123456; 'DateTime' = [datetime]'1963-10-07T17:56:53.8139055+02:00'; 'Version' = [version]'1.2.34567.890'; 'Guid' = [guid]'5f167621-6abe-4153-a26c-f643e1716720'; 'Script' = [scriptblock]{2 * 3}; 'Array' = [array]([string]'One', [string]'Two', [string]'Three', [string]'Four'); 'ByteArray' = [array]([int]1, [int]2, [int]3); 'StringArray' = [array]([string]'One', [string]'Two', [string]'Three'); 'EmptyArray' = [array]@(); 'SingleValueArray' = [array][string]'one'; 'SubArray' = [array]([string]'One', [array]([string]'Two', [string]'Three'), [string]'Four'); 'HashTable' = [hashtable]@{'Name' = [string]'Value'}; 'Ordered' = [ordered]@{'One' = [int]1; 'Two' = [int]2; 'Three' = [int]3; 'Four' = [int]4}; 'Object' = [pscustomobject]@{'Name' = [string]'Value'}}
+; 'Int' = [int]67; 'Double' = [double]1.2; 'Long' = [long]1234567890123456; 'DateTime' = [datetime]'1963-10-07T17:56:53.8139055'; 'Version' = [version]'1.2.34567.890'; 'Guid' = [guid]'5f167621-6abe-4153-a26c-f643e1716720'; 'Script' = [scriptblock]{2 * 3}; 'Array' = [array]([string]'One', [string]'Two', [string]'Three', [string]'Four'); 'ByteArray' = [array]([int]1, [int]2, [int]3); 'StringArray' = [array]([string]'One', [string]'Two', [string]'Three'); 'EmptyArray' = [array]@(); 'SingleValueArray' = [array][string]'one'; 'SubArray' = [array]([string]'One', [array]([string]'Two', [string]'Three'), [string]'Four'); 'HashTable' = [hashtable]@{'Name' = [string]'Value'}; 'Ordered' = [ordered]@{'One' = [int]1; 'Two' = [int]2; 'Three' = [int]3; 'Four' = [int]4}; 'Object' = [pscustomobject]@{'Name' = [string]'Value'}}
 "@
 	}
 
@@ -1145,7 +1145,7 @@ World
 Hello
 World
 '@
-;'Int'=67;'Double'=1.2;'Long'=1234567890123456;'DateTime'=[datetime]'1963-10-07T17:56:53.8139055+02:00';'Version'=[version]'1.2.34567.890';'Guid'=[guid]'5f167621-6abe-4153-a26c-f643e1716720';'Script'={2 * 3};'Array'='One','Two','Three','Four';'ByteArray'=1,2,3;'StringArray'='One','Two','Three';'EmptyArray'=@();'SingleValueArray'=,'one';'SubArray'='One',('Two','Three'),'Four';'HashTable'=@{'Name'='Value'};'Ordered'=[ordered]@{'One'=1;'Two'=2;'Three'=3;'Four'=4};'Object'=[pscustomobject]@{'Name'='Value'}}
+;'Int'=67;'Double'=1.2;'Long'=1234567890123456;'DateTime'=[datetime]'1963-10-07T17:56:53.8139055';'Version'=[version]'1.2.34567.890';'Guid'=[guid]'5f167621-6abe-4153-a26c-f643e1716720';'Script'={2 * 3};'Array'='One','Two','Three','Four';'ByteArray'=1,2,3;'StringArray'='One','Two','Three';'EmptyArray'=@();'SingleValueArray'=,'one';'SubArray'='One',('Two','Three'),'Four';'HashTable'=@{'Name'='Value'};'Ordered'=[ordered]@{'One'=1;'Two'=2;'Three'=3;'Four'=4};'Object'=[pscustomobject]@{'Name'='Value'}}
 "@
 	}
 
@@ -1190,7 +1190,7 @@ World
 Hello
 World
 '@
-;'Int'=[int]67;'Double'=[double]1.2;'Long'=[long]1234567890123456;'DateTime'=[datetime]'1963-10-07T17:56:53.8139055+02:00';'Version'=[version]'1.2.34567.890';'Guid'=[guid]'5f167621-6abe-4153-a26c-f643e1716720';'Script'=[scriptblock]{2 * 3};'Array'=[array]([string]'One',[string]'Two',[string]'Three',[string]'Four');'ByteArray'=[array]([int]1,[int]2,[int]3);'StringArray'=[array]([string]'One',[string]'Two',[string]'Three');'EmptyArray'=[array]@();'SingleValueArray'=[array][string]'one';'SubArray'=[array]([string]'One',[array]([string]'Two',[string]'Three'),[string]'Four');'HashTable'=[hashtable]@{'Name'=[string]'Value'};'Ordered'=[ordered]@{'One'=[int]1;'Two'=[int]2;'Three'=[int]3;'Four'=[int]4};'Object'=[pscustomobject]@{'Name'=[string]'Value'}}
+;'Int'=[int]67;'Double'=[double]1.2;'Long'=[long]1234567890123456;'DateTime'=[datetime]'1963-10-07T17:56:53.8139055';'Version'=[version]'1.2.34567.890';'Guid'=[guid]'5f167621-6abe-4153-a26c-f643e1716720';'Script'=[scriptblock]{2 * 3};'Array'=[array]([string]'One',[string]'Two',[string]'Three',[string]'Four');'ByteArray'=[array]([int]1,[int]2,[int]3);'StringArray'=[array]([string]'One',[string]'Two',[string]'Three');'EmptyArray'=[array]@();'SingleValueArray'=[array][string]'one';'SubArray'=[array]([string]'One',[array]([string]'Two',[string]'Three'),[string]'Four');'HashTable'=[hashtable]@{'Name'=[string]'Value'};'Ordered'=[ordered]@{'One'=[int]1;'Two'=[int]2;'Three'=[int]3;'Four'=[int]4};'Object'=[pscustomobject]@{'Name'=[string]'Value'}}
 "@
 	}
 
