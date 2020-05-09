@@ -215,6 +215,7 @@ function ConvertTo-Expression
             }
         }
 
+        $allObjects = New-Object System.Collections.ArrayList
         $listItem = $null
         $tab = $IndentChar * $Indentation
 
@@ -624,7 +625,29 @@ function ConvertTo-Expression
     }
     process
     {
-        $expression = (Serialize -Object $Object).TrimEnd()
+        if ($Object -is [System.Array])
+        {
+            [void]$allObjects.AddRange($Object)
+        }
+        else
+        {
+            if ($null -ne $Object)
+            {
+                [void]$allObjects.Add($Object)
+            }
+        }
+    }
+
+    end
+    {
+        if ($allObjects.Count -eq 1)
+        {
+            $expression = (Serialize -Object $allObjects[0]).TrimEnd()
+        }
+        else
+        {
+            $expression = (Serialize -Object $allObjects.ToArray()).TrimEnd()
+        }
         try
         {
             [scriptblock]::Create($expression)
