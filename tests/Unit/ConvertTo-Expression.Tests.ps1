@@ -3,9 +3,24 @@ function Should-BeEqualTo ($Value2, [Parameter(ValueFromPipeLine = $true)]$Value
 	$Value1 | Should -BeOfType $Value2.GetType().Name
 }
 
-function Test-Format ([string]$Expression, [Switch]$Strong, [int]$Expand = 9) {
+function Test-Format
+{
+	param (
+		[Parameter(Mandatory = $true)]
+		[string]
+		$Expression,
+
+		[Parameter()]
+		[switch]
+		$Strong,
+
+		[Parameter()]
+		[int]
+		$Expand = 9
+	)
+
 	$Object = &([ScriptBlock]::Create("$Expression"))
-	$Actual = ConvertTo-Expression $Object -Strong:$Strong -Expand $Expand
+	$Actual = ConvertTo-Expression $Object -Strong:$Strong -Expand $Expand #-Indentation 4 -IndentChar ' '
 	It "$Expression" { "$Actual" | Should -Be "$Expression" }
 }
 
@@ -40,9 +55,9 @@ Describe 'ConvertTo-Expression' {
 			Long       = [long]68
 			Null       = $null
 			Booleans   = $false, $true
-			Decimal    = [Decimal]69
-			Single     = [Single]70
-			Double     = [Double]71
+			Decimal    = [decimal]69
+			Single     = [single]70
+			Double     = [double]71
 			Adsi       = [ADSI]'WinNT://./Administrators'
 			DateTime   = $DateTime
 			TimeSpan   = $TimeSpan
@@ -52,10 +67,10 @@ Describe 'ConvertTo-Expression' {
 			Array      = @("One", "Two", @("Three", "Four"), "Five")
 			EmptyArray = @()
 			HashTable  = @{city = "New York"; currency = "Dollar	(`$)"; postalCode = 10021; Etc = @("Three", "Four", "Five") }
-			Ordered    = [Ordered]@{One = 1; Two = 2; Three = 3; Four = 4 }
+			Ordered    = [ordered]@{One = 1; Two = 2; Three = 3; Four = 4 }
 			Object     = New-Object PSObject -Property @{Name = "One"; Value = 1; Group = @("First", "Last") }
 			DataTable  = $DataTable
-			Xml        = [Xml]@"
+			Xml        = [xml]@"
 			<items>
 				<item id="0001" type="donut">
 					<name>Cake</name>
@@ -352,7 +367,7 @@ Describe 'ConvertTo-Expression' {
 
 		Test-Format "'One'"
 
-		#		Test-Format ",'One'"
+		Test-Format ",'One'"
 
 		Test-Format @"
 1,
