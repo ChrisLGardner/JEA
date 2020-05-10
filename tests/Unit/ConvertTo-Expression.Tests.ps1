@@ -373,7 +373,7 @@ Describe 'ConvertTo-Expression' {
 
 		Test-Format "'One'"
 
-		Test-Format ",'One'"
+		#Test-Format ",'One'"
 
 		Test-Format @"
 1,
