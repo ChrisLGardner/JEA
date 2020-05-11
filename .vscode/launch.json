@@ -5,10 +5,32 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "PowerShell Launch Script",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "enter path or command to execute e.g.: ${workspaceFolder}/src/foo.ps1 or Invoke-Pester",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "PowerShell Launch Current File",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${file}",
+            "cwd": "${file}"
+        },
+        {
             "name": "PowerShell: Interactive Session",
             "type": "PowerShell",
             "request": "launch",
             "cwd": ""
-        }
+        },
+        {
+            "type": "PowerShell",
+            "request": "launch",
+            "name": "Launch Build Script",
+            "script": "${workspaceRoot}/Build.ps1",
+            "args": [],
+            "cwd": "${workspaceRoot}/DSC/"
+        },
     ]
 }
