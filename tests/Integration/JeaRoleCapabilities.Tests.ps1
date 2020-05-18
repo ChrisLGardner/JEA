@@ -155,7 +155,7 @@ try
                 $result.VisibleFunctions | Should -Be 'Get-ExampleFunction'
                 $result.FunctionDefinitions.Name | Should -Be 'Get-ExampleFunction'
                 $result.FunctionDefinitions.Scriptblock | Should -Be '{Get-Command}'
-                $result.FunctionDefinitions.Scriptblock | Should -BeOfType [ScriptBlock]
+                $result.FunctionDefinitions.Scriptblock | Should -BeOfType [scriptblock]
             }
 
             It "Should create a psrc with 2 function definitions and 2 visible function for those custom function" {
@@ -168,10 +168,10 @@ try
                 $result.VisibleFunctions | Should -Be 'Get-ExampleFunction', 'Get-OtherExample'
                 $result.FunctionDefinitions[0].Name | Should -Be 'Get-ExampleFunction'
                 $result.FunctionDefinitions[0].Scriptblock | Should -Be '{Get-Command}'
-                $result.FunctionDefinitions[0].Scriptblock | Should -BeOfType [ScriptBlock]
+                $result.FunctionDefinitions[0].Scriptblock | Should -BeOfType [scriptblock]
                 $result.FunctionDefinitions[1].Name | Should -Be 'Get-OtherExample'
                 $result.FunctionDefinitions[1].Scriptblock | Should -Be '{Get-Command}'
-                $result.FunctionDefinitions[1].Scriptblock | Should -BeOfType [ScriptBlock]
+                $result.FunctionDefinitions[1].Scriptblock | Should -BeOfType [scriptblock]
             }
         }
 
@@ -195,8 +195,8 @@ try
                 . $configFile
 
                 $mofOutputFolder = 'TestDrive:\Configurations\BasicVisibleCmdlets'
-                $PsrcPath = Join-Path (Get-Item TestDrive:\).FullName -ChildPath 'BasicVisibleCmdlets\RoleCapabilities\BasicVisibleCmdlets.psrc'
-                BasicVisibleCmdlets -OutputPath $mofOutputFolder -Path $PsrcPath
+                $psrcPath = Join-Path (Get-Item TestDrive:\).FullName -ChildPath 'BasicVisibleCmdlets\RoleCapabilities\BasicVisibleCmdlets.psrc'
+                BasicVisibleCmdlets -OutputPath $mofOutputFolder -Path $psrcPath
                 { Start-DscConfiguration -Path $mofOutputFolder -Wait -Force } | Should -Not -Throw
             }
 
@@ -220,8 +220,8 @@ try
                 . $configFile
 
                 $mofOutputFolder = 'TestDrive:\Configurations\WildcardVisibleCmdlets'
-                $PsrcPath = Join-Path (Get-Item TestDrive:\).FullName -ChildPath 'WildcardVisibleCmdlets\RoleCapabilities\WildcardVisibleCmdlets.psrc'
-                WildcardVisibleCmdlets -OutputPath $mofOutputFolder -Path $PsrcPath
+                $psrcPath = Join-Path (Get-Item TestDrive:\).FullName -ChildPath 'WildcardVisibleCmdlets\RoleCapabilities\WildcardVisibleCmdlets.psrc'
+                WildcardVisibleCmdlets -OutputPath $mofOutputFolder -Path $psrcPath
                 { Start-DscConfiguration -Path $mofOutputFolder -Wait -Force } | Should -Not -Throw
             }
 
@@ -245,8 +245,8 @@ try
                 . $configFile
 
                 $mofOutputFolder = 'TestDrive:\Configurations\FunctionDefinitions'
-                $PsrcPath = Join-Path (Get-Item TestDrive:\).FullName -ChildPath 'FunctionDefinitions\RoleCapabilities\FunctionDefinitions.psrc'
-                FunctionDefinitions -OutputPath $mofOutputFolder -Path $PsrcPath
+                $psrcPath = Join-Path -Path (Get-Item TestDrive:\).FullName -ChildPath 'FunctionDefinitions\RoleCapabilities\FunctionDefinitions.psrc'
+                FunctionDefinitions -OutputPath $mofOutputFolder -Path $psrcPath
                 { Start-DscConfiguration -Path $mofOutputFolder -Wait -Force } | Should -Not -Throw
             }
 
@@ -260,8 +260,49 @@ try
                 $results = Import-PowerShellDataFile -Path 'TestDrive:\FunctionDefinitions\RoleCapabilities\FunctionDefinitions.psrc'
 
                 $results.FunctionDefinitions.Name | Should -Be 'Get-ExampleData'
-                $results.FunctionDefinitions.ScriptBlock | Should -Be '{Get-Command}'
-                $results.FunctionDefinitions.ScriptBlock | Should -BeOfType [ScriptBlock]
+                $results.FunctionDefinitions.ScriptBlock | Should -Be '{ Get-Command }'
+                $results.FunctionDefinitions.ScriptBlock | Should -BeOfType [scriptblock]
+            }
+        }
+
+        Context "Testing Applying MultipleFunctionDefinitions Configuration File" {
+
+            It "Should apply the example MultipleFunctionDefinitions configuration without throwing" -Skip:$buildBox {
+                $configFile = Join-Path -Path $PSScriptRoot -ChildPath 'TestConfigurations\MultipleFunctionDefinitions.config.ps1'
+                . $configFile
+
+                $mofOutputFolder = 'TestDrive:\Configurations\MultipleFunctionDefinitions'
+                $psrcPath = Join-Path -Path (Get-Item TestDrive:\).FullName -ChildPath 'MultipleFunctionDefinitions\RoleCapabilities\MultipleFunctionDefinitions.psrc'
+                MultipleFunctionDefinitions -OutputPath $mofOutputFolder -Path $psrcPath
+                { Start-DscConfiguration -Path $mofOutputFolder -Wait -Force } | Should -Not -Throw
+            }
+
+            It "Should be able to call Get-DscConfiguration without throwing" -Skip:$buildBox {
+                { Get-DscConfiguration -ErrorAction Stop } | Should -Not -Throw
+            }
+
+            It "Should have created the psrc file and set the FunctionDefinitions and VisibleFunctions to F1 and F2" -Skip:$buildBox {
+                Test-Path -Path 'TestDrive:\MultipleFunctionDefinitions\RoleCapabilities\MultipleFunctionDefinitions.psrc' | Should -Be $true
+
+                $results = Import-PowerShellDataFile -Path 'TestDrive:\MultipleFunctionDefinitions\RoleCapabilities\MultipleFunctionDefinitions.psrc'
+
+                $results.FunctionDefinitions | Should -HaveCount 2
+                $results.FunctionDefinitions.Name | Should -Be 'F1', 'F2'
+
+                $results.FunctionDefinitions[0].ScriptBlock | Should -Be (@'
+{
+    Get-Date
+    Get-Process
+}
+'@ -replace "`r`n", "`n")
+                $results.FunctionDefinitions.ScriptBlock[0] | Should -BeOfType [scriptblock]
+
+                $results.FunctionDefinitions[1].ScriptBlock | Should -Be (@'
+{
+    Get-Service | Where-Object Status -eq running
+}
+'@ -replace "`r`n", "`n")
+                $results.FunctionDefinitions.ScriptBlock[1] | Should -BeOfType [scriptblock]
             }
         }
 
@@ -272,8 +313,8 @@ try
                 . $configFile
 
                 $mofOutputFolder = 'TestDrive:\Configurations\FailingFunctionDefinitions'
-                $PsrcPath = Join-Path (Get-Item TestDrive:\).FullName -ChildPath 'FailingFunctionDefinitions\RoleCapabilities\FailingFunctionDefinitions.psrc'
-                FailingFunctionDefinitions -OutputPath $mofOutputFolder -Path $PsrcPath
+                $psrcPath = Join-Path (Get-Item TestDrive:\).FullName -ChildPath 'FailingFunctionDefinitions\RoleCapabilities\FailingFunctionDefinitions.psrc'
+                FailingFunctionDefinitions -OutputPath $mofOutputFolder -Path $psrcPath
                 { Start-DscConfiguration -Path $mofOutputFolder -Wait -Force -ErrorAction Stop } | Should -Throw
             }
 

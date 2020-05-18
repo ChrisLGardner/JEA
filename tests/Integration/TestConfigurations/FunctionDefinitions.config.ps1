@@ -1,4 +1,4 @@
-Configuration FunctionDefinitions {
+configuration FunctionDefinitions {
     param (
         [Parameter(Mandatory = $true)]
         [string]$Path
@@ -11,7 +11,10 @@ Configuration FunctionDefinitions {
         JeaRoleCapabilities FunctionDefinitions {
             Path = $Path
             Ensure = 'Present'
-            FunctionDefinitions = '@{Name = "Get-ExampleData"; ScriptBlock = {Get-Command} }'
+            FunctionDefinitions = '@{
+                Name = "Get-ExampleData"
+                ScriptBlock = { Get-Command }
+            }'
             VisibleFunctions = 'Get-ExampleData'
         }
 

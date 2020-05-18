@@ -1,4 +1,4 @@
-Configuration BasicVisibleCmdlets {
+configuration BasicVisibleCmdlets {
     param (
         [Parameter(Mandatory = $true)]
         [string]$Path

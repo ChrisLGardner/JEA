@@ -1,4 +1,4 @@
-Configuration FailingFunctionDefinitions {
+configuration FailingFunctionDefinitions {
     param (
         [Parameter(Mandatory = $true)]
         [string]$Path

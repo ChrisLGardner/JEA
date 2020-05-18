@@ -1,4 +1,4 @@
-Configuration WildcardVisibleCmdlets {
+configuration WildcardVisibleCmdlets {
     param (
         [Parameter(Mandatory = $true)]
         [string]$Path
