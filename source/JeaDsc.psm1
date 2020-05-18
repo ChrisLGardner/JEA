@@ -12,7 +12,7 @@ function Convert-ObjectToHashtable
     {
         $hashtable = @{ }
 
-        foreach ($property in $Object.PSObject.Properties.Where( { $_.Value -ne $null }))
+        foreach ($property in $Object.PSObject.Properties.Where({ $_.Value }))
         {
             $hashtable.Add($property.Name, $property.Value)
         }
@@ -20,24 +20,6 @@ function Convert-ObjectToHashtable
         $hashtable
     }
 }
-
-<#PSScriptInfo
-.VERSION 3.3.0
-.GUID 5f167621-6abe-4153-a26c-f643e1716720
-.AUTHOR Ronald Bode (iRon)
-.DESCRIPTION Stringifys an object to a PowerShell expression (PSON, PowerShell Object Notation).
-.COMPANYNAME
-.COPYRIGHT
-.TAGS PSON PowerShell Object Notation expression Stringify
-.LICENSEURI https://github.com/iRon7/ConvertTo-Expression/LICENSE.txt
-.PROJECTURI https://github.com/iRon7/ConvertTo-Expression
-.ICONURI https://raw.githubusercontent.com/iRon7/ConvertTo-Expression/master/ConvertTo-Expression.png
-.EXTERNALMODULEDEPENDENCIES
-.REQUIREDSCRIPTS
-.EXTERNALSCRIPTDEPENDENCIES
-.RELEASENOTES
-.PRIVATEDATA
-#>
 
 function ConvertTo-Expression
 {
@@ -616,7 +598,8 @@ function ConvertTo-Expression
 
 function Convert-StringToObject
 {
-    [cmdletbinding()]
+    [CmdletBinding()]
+    [OutputType([hashtable])]
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [AllowNull()]
@@ -657,7 +640,7 @@ function Convert-StringToObject
                             }
                             if ($element.StaticType.Name -eq 'Hashtable')
                             {
-                                [Hashtable]$element.SafeGetValue()
+                                [hashtable]$element.SafeGetValue()
                             }
                         }
                     }
@@ -1180,7 +1163,8 @@ function Get-LocalizedData
 
 function Sync-Parameter
 {
-    [Cmdletbinding()]
+    [CmdletBinding()]
+    [OutputType([hashtable])]
     param (
         [Parameter(Mandatory = $true)]
         [ValidateScript( {
@@ -1216,7 +1200,6 @@ function Sync-Parameter
 
     $Parameters
 }
-
 
 $script:localizedData = Get-LocalizedData `
     -ResourceName 'JeaDsc' `
