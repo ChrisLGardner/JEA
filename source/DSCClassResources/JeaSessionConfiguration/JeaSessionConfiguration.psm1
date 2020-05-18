@@ -133,6 +133,7 @@ class JeaSessionConfiguration
 
     ## The optional number of seconds to wait for registering the endpoint to complete.
     ## 0 for no timeout
+    [Dscproperty()]
     [int] $HungRegistrationTimeout = 10
 
     JeaSessionConfiguration()
@@ -264,7 +265,7 @@ class JeaSessionConfiguration
     }
 
     ## Get a PS Session Configuration based on its name
-    hidden [Object] GetPSSessionConfiguration($Name)
+    hidden [object] GetPSSessionConfiguration($Name)
     {
         $winRMService = Get-Service -Name 'WinRM'
         if ($winRMService -and $winRMService.Status -eq 'Running')
@@ -292,7 +293,7 @@ class JeaSessionConfiguration
     }
 
     ## Unregister a PS Session Configuration based on its name
-    hidden [Void] UnregisterPSSessionConfiguration($Name)
+    hidden [void] UnregisterPSSessionConfiguration($Name)
     {
         $winRMService = Get-Service -Name 'WinRM'
         if ($winRMService -and $winRMService.Status -eq 'Running')
@@ -320,8 +321,8 @@ class JeaSessionConfiguration
             # therefore we need to run Register-PSSessionConfiguration within a job to allow us to handle a hanging WinRM service
 
             # Save the list of services sharing the same process as WinRM in case we have to restart them
-            $processId = Get-CimInstance -ClassName 'Win32_Service' -Filter "Name LIKE 'WinRM'" | Select-Object -Expand 'ProcessId'
-            $serviceList = @(Get-CimInstance -ClassName 'Win32_Service' -Filter "ProcessId=$processId" | Select-Object -Expand 'Name')
+            $processId = Get-CimInstance -ClassName 'Win32_Service' -Filter "Name LIKE 'WinRM'" | Select-Object -ExpandProperty ProcessId
+            $serviceList = Get-CimInstance -ClassName 'Win32_Service' -Filter "ProcessId=$processId" | Select-Object -ExpandProperty Name
             foreach ($service in $serviceList.clone())
             {
                 $dependentServiceList = Get-Service -Name $service | ForEach-Object { $_.DependentServices }
@@ -343,7 +344,7 @@ class JeaSessionConfiguration
                 $registerString = "`$null = Register-PSSessionConfiguration -Name '$Name' -NoServiceRestart -Force -ErrorAction 'Stop' -WarningAction 'SilentlyContinue'"
             }
 
-            $registerScriptBlock = [Scriptblock]::Create($registerString)
+            $registerScriptBlock = [scriptblock]::Create($registerString)
 
             if ($Timeout -gt 0)
             {
@@ -356,7 +357,7 @@ class JeaSessionConfiguration
                 $winRMService = Get-Service -Name 'WinRM'
                 if ($winRMService -and $winRMService.Status -eq 'StopPending')
                 {
-                    $processId = Get-CimInstance -ClassName 'Win32_Service' -Filter "Name LIKE 'WinRM'" | Select-Object -Expand 'ProcessId'
+                    $processId = Get-CimInstance -ClassName 'Win32_Service' -Filter "Name LIKE 'WinRM'" | Select-Object -ExpandProperty ProcessId
                     Write-Verbose "WinRM seems hanging in Stopping state. Forcing process $processId to stop"
                     $failureList = @()
                     try
