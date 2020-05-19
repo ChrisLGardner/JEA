@@ -1,5 +1,7 @@
 ﻿@{
 
+    RootModule           = 'JeaDsc.psm1'
+
     ModuleVersion        = '1.0.0'
 
     GUID                 = 'c7c41e83-55c3-4e0f-9c4f-88de602e04db'
