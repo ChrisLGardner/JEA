@@ -4,14 +4,16 @@ enum Ensure
     Absent
 }
 
-$modulePath = Join-Path -Path (Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent) -ChildPath 'Modules'
+$modulePath = Join-Path -Path (Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent) -ChildPath Modules
 
 # Import the JeaDsc Common Module
 Import-Module -Name (Join-Path -Path $modulePath `
-        -ChildPath (Join-Path -Path 'JeaDsc.Common' `
-            -ChildPath 'JeaDsc.Common.psm1'))
+        -ChildPath (Join-Path -Path JeaDsc.Common `
+            -ChildPath JeaDsc.Common.psm1))
 
-Import-Module -Name (Join-Path -Path $modulePath -ChildPath 'DscResource.Common')
+Import-Module -Name (Join-Path -Path $modulePath -ChildPath DscResource.Common)
+
+$script:localizedData = Get-LocalizedData -DefaultUICulture en-US
 
 [DscResource()]
 class JeaSessionConfiguration
@@ -154,12 +156,12 @@ class JeaSessionConfiguration
 
         if ($this.RunAsVirtualAccountGroups -and $this.GroupManagedServiceAccount)
         {
-            throw "The RunAsVirtualAccountGroups setting can not be used when a configuration is set to run as a Group Managed Service Account"
+            throw $script:localizedData.ConflictRunAsVirtualAccountGroupsAndGroupManagedServiceAccount
         }
 
         if ($this.GroupManagedServiceAccount -and $this.RunAsVirtualAccount)
         {
-            throw "The properties 'GroupManagedServiceAccount' and 'RunAsVirtualAccount' cannot be used together."
+            throw $script:localizedData.ConflictRunAsVirtualAccountAndGroupManagedServiceAccount
         }
 
         if (-not $this.GroupManagedServiceAccount)

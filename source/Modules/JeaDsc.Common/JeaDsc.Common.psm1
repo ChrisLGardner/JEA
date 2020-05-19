@@ -1154,7 +1154,7 @@ function Get-LocalizedData
     }
 
     Import-LocalizedData `
-        -BindingVariable 'localizedData' `
+        -BindingVariable localizedData `
         -FileName "$ResourceName.strings.psd1" `
         -BaseDirectory $localizedStringFileLocation
 
