@@ -177,10 +177,10 @@ Configuration DscDiagnostic {
 }
 
 Get-PSSession | Remove-PSSession
-Remove-Item -Path C:\DSC\* -ErrorAction SilentlyContinue
-DscDiagnostic -OutputPath C:\DSC -Verbose
+Remove-Item -Path C:\DscTest\* -ErrorAction SilentlyContinue
+DscDiagnostic -OutputPath C:\DscTest -Verbose
 
-PSDesiredStateConfiguration\Start-DscConfiguration -Path C:\DSC -Wait -Verbose -Force
+PSDesiredStateConfiguration\Start-DscConfiguration -Path C:\DscTest -Wait -Verbose -Force
 
 $s = New-PSSession -ComputerName localhost -ConfigurationName DSC
 Import-PSSession -Session $s -Prefix x

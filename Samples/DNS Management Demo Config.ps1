@@ -51,7 +51,7 @@ Write-Host 'DNS Management Endpoint' -ForegroundColor Green
     }
 }
 
-#Remove-Item -Path C:\DSC\* -ErrorAction SilentlyContinue
-#DnsAdmin -OutputPath C:\DSC -Verbose
-#
-#Start-DscConfiguration -Path C:\DSC -Wait -Verbose -Force
+Remove-Item -Path C:\DscTest\* -ErrorAction SilentlyContinue
+DnsAdmin -OutputPath C:\DscTest -Verbose
+
+Start-DscConfiguration -Path C:\DscTest -Wait -Verbose -Force
