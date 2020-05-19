@@ -1202,5 +1202,5 @@ function Sync-Parameter
 }
 
 $script:localizedData = Get-LocalizedData `
-    -ResourceName 'JeaDsc' `
+    -ResourceName 'JeaDsc.Common' `
     -ScriptRoot $PSScriptRoot

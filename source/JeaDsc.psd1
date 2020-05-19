@@ -1,8 +1,6 @@
 ﻿@{
 
-    RootModule           = 'JeaDsc.psm1'
-
-    ModuleVersion        = '0.91.0'
+    ModuleVersion        = '1.0.0'
 
     GUID                 = 'c7c41e83-55c3-4e0f-9c4f-88de602e04db'
 
@@ -21,15 +19,7 @@
         'DSCClassResources\JeaRoleCapabilities\JeaRoleCapabilities.psd1'
     )
 
-    FunctionsToExport    = @(
-        'Convert-ObjectToHashtable'
-        'Convert-ObjectToOrderedDictionary'
-        'Convert-StringToObject'
-        'ConvertTo-Expression'
-        'ConvertTo-OrderedDictionary'
-        'Sync-Parameter'
-        'Test-DscParameterState'
-    )
+    FunctionsToExport    = @()
 
     CmdletsToExport      = @()
 
@@ -46,43 +36,17 @@
 
         PSData = @{
 
-            Tags       = @('DesiredStateConfiguration', 'DSC', 'DSCResource', 'JEA', 'JustEnoughAdministration')
+            Tags         = @('DesiredStateConfiguration', 'DSC', 'DSCResource', 'JEA', 'JustEnoughAdministration')
 
-            LicenseUri = 'https://github.com/dsccommunity/JeaDsc/blob/master/LICENSE'
+            LicenseUri   = 'https://github.com/dsccommunity/JeaDsc/blob/master/LICENSE'
 
-            ProjectUri = 'https://github.com/dsccommunity/JeaDsc'
+            ProjectUri   = 'https://github.com/dsccommunity/JeaDsc'
 
-            IconUri    = 'https://dsccommunity.org/images/DSC_Logo_300p.png'
+            IconUri      = 'https://dsccommunity.org/images/DSC_Logo_300p.png'
 
-            Prerelease = 'sampler0001'
+            Prerelease   = ''
 
-            ReleaseNotes = '## [0.91.0-sampler0001] - 2020-03-25
-
-### Added
-
-- Migrated the resource to Sampler
-
-### Changed
-
-- Fixed a lot of issues.
-
-### Deprecated
-
-- None
-
-### Removed
-
-- None
-
-### Fixed
-
-- None
-
-### Security
-
-- None
-
-'
+            ReleaseNotes = ''
 
         }
 

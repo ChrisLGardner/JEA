@@ -4,6 +4,15 @@ enum Ensure
     Absent
 }
 
+$modulePath = Join-Path -Path (Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent) -ChildPath 'Modules'
+
+# Import the JeaDsc Common Module
+Import-Module -Name (Join-Path -Path $modulePath `
+        -ChildPath (Join-Path -Path 'JeaDsc.Common' `
+            -ChildPath 'JeaDsc.Common.psm1'))
+
+Import-Module -Name (Join-Path -Path $modulePath -ChildPath 'DscResource.Common')
+
 [DscResource()]
 class JeaRoleCapabilities
 {
