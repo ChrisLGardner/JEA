@@ -68,7 +68,7 @@ Pester:
     - FunctionalQuality
     - TestQuality
   Tag:
-  CodeCoverageThreshold: 30
+  CodeCoverageThreshold: 25
 
 DscTest:
   OutputFormat: NUnitXML
