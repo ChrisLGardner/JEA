@@ -245,7 +245,7 @@ class JeaRoleCapabilities
                 }
             }
 
-            $compare = Test-DscParameterState -CurrentValues $currentState -DesiredValues $Parameters -SortArrayValues -TurnOffTypeChecking -ReverseCheck
+            $compare = Test-DscParameterState2 -CurrentValues $currentState -DesiredValues $Parameters -SortArrayValues -TurnOffTypeChecking -ReverseCheck
 
             return $compare
         }

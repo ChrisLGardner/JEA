@@ -682,7 +682,7 @@ function Convert-StringToObject
     }
 }
 
-function Test-DscParameterState
+function Test-DscParameterState2
 {
     [CmdletBinding()]
     param
@@ -967,11 +967,11 @@ function Test-DscParameterState
 
                         if ($returnValue)
                         {
-                            $returnValue = Test-DscParameterState @param
+                            $returnValue = Test-DscParameterState2 @param
                         }
                         else
                         {
-                            Test-DscParameterState @param | Out-Null
+                            Test-DscParameterState2 @param | Out-Null
                         }
                         continue
                     }
@@ -1000,11 +1000,11 @@ function Test-DscParameterState
 
             if ($returnValue)
             {
-                $returnValue = Test-DscParameterState @param
+                $returnValue = Test-DscParameterState2 @param
             }
             else
             {
-                Test-DscParameterState @param | Out-Null
+                Test-DscParameterState2 @param | Out-Null
             }
             continue
         }
@@ -1054,11 +1054,11 @@ function Test-DscParameterState
 
         if ($returnValue)
         {
-            $returnValue = Test-DscParameterState @reverseCheckParameters
+            $returnValue = Test-DscParameterState2 @reverseCheckParameters
         }
         else
         {
-            $null = Test-DscParameterState @reverseCheckParameters
+            $null = Test-DscParameterState2 @reverseCheckParameters
         }
     }
 

@@ -270,7 +270,7 @@ class JeaSessionConfiguration
             }
         }
 
-        $compare = Test-DscParameterState -CurrentValues $currentState -DesiredValues $parameters -TurnOffTypeChecking -SortArrayValues -ReverseCheck
+        $compare = Test-DscParameterState2 -CurrentValues $currentState -DesiredValues $parameters -TurnOffTypeChecking -SortArrayValues -ReverseCheck
 
         return $compare
     }
