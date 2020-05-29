@@ -5,6 +5,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Renamed 'Test-DscParameterState' to 'Test-DscParameterState2' for a conflict with 'DscResource.Common'.
+
 ### Added
 
 - Migrated the resource to Sampler
