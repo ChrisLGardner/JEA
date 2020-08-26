@@ -5,6 +5,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2020-08-26
+
 - Renamed 'Test-DscParameterState' to 'Test-DscParameterState2' for a conflict with 'DscResource.Common'.
 - Removing functions provided by 'DscResource.Common'
 - Making property 'RoleDefinitions' non-mandatory
