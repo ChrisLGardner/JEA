@@ -143,35 +143,13 @@ class JeaSessionConfiguration
     [Dscproperty()]
     [int] $HungRegistrationTimeout = 10
 
-    JeaSessionConfiguration()
-    {
-        if (-not $this.SessionType)
-        {
-            $this.SessionType = 'RestrictedRemoteServer'
-        }
-
-        if ($this.RunAsVirtualAccountGroups -and $this.GroupManagedServiceAccount)
-        {
-            throw $script:localizedData.ConflictRunAsVirtualAccountGroupsAndGroupManagedServiceAccount
-        }
-
-        if ($this.GroupManagedServiceAccount -and $this.RunAsVirtualAccount)
-        {
-            throw $script:localizedData.ConflictRunAsVirtualAccountAndGroupManagedServiceAccount
-        }
-
-        if (-not $this.GroupManagedServiceAccount)
-        {
-            $this.RunAsVirtualAccount = $true
-            Write-Warning "'GroupManagedServiceAccount' and 'RunAsVirtualAccount' are not defined, setting 'RunAsVirtualAccount' to 'true'."
-        }
-    }
-
     [void] Set()
     {
         $ErrorActionPreference = 'Stop'
 
-        $psscPath = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName() + ".pssc")
+        $this.TestParameters()
+
+        $psscPath = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName() + '.pssc')
         Write-Verbose "Storing PSSessionConfigurationFile in file '$psscPath'"
         $desiredState = Convert-ObjectToHashtable -Object $this
         $desiredState.Add('Path', $psscPath)
@@ -188,9 +166,9 @@ class JeaSessionConfiguration
         try
         {
             ## If we are replacing Microsoft.PowerShell, create a 'break the glass' endpoint
-            if ($this.Name -eq "Microsoft.PowerShell")
+            if ($this.Name -eq 'Microsoft.PowerShell')
             {
-                $breakTheGlassName = "Microsoft.PowerShell.Restricted"
+                $breakTheGlassName = 'Microsoft.PowerShell.Restricted'
                 if (-not ($this.GetPSSessionConfiguration($breakTheGlassName)))
                 {
                     $this.RegisterPSSessionConfiguration($breakTheGlassName, $null, $this.HungRegistrationTimeout)
@@ -230,6 +208,8 @@ class JeaSessionConfiguration
     # Tests if the resource is in the desired state.
     [bool] Test()
     {
+        $this.TestParameters()
+
         $currentState = Convert-ObjectToHashtable -Object $this.Get()
         $desiredState = Convert-ObjectToHashtable -Object $this
 
@@ -269,6 +249,32 @@ class JeaSessionConfiguration
         $compare = Test-DscParameterState -CurrentValues $currentState -DesiredValues $desiredState -TurnOffTypeChecking -SortArrayValues -ReverseCheck
 
         return $compare
+    }
+
+    hidden [bool] TestParameters()
+    {
+        if (-not $this.SessionType)
+        {
+            $this.SessionType = 'RestrictedRemoteServer'
+        }
+
+        if ($this.RunAsVirtualAccountGroups -and $this.GroupManagedServiceAccount)
+        {
+            throw $script:localizedData.ConflictRunAsVirtualAccountGroupsAndGroupManagedServiceAccount
+        }
+
+        if ($this.GroupManagedServiceAccount -and $this.RunAsVirtualAccount)
+        {
+            throw $script:localizedData.ConflictRunAsVirtualAccountAndGroupManagedServiceAccount
+        }
+
+        if (-not $this.GroupManagedServiceAccount)
+        {
+            $this.RunAsVirtualAccount = $true
+            Write-Warning "'GroupManagedServiceAccount' and 'RunAsVirtualAccount' are not defined, setting 'RunAsVirtualAccount' to 'true'."
+        }
+
+        return $true
     }
 
     ## Get a PS Session Configuration based on its name
