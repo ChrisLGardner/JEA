@@ -4,7 +4,7 @@
 ####################################################
 CopyPaths:
   - en-US
-  - DSCClassResources
+  #- DSCClassResources
   - Modules
 Encoding: UTF8
 VersionedOutputDirectory: true

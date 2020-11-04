@@ -16,10 +16,7 @@
 
     PowerShellVersion    = '5.1'
 
-    NestedModules        = @(
-        'DSCClassResources\JeaSessionConfiguration\JeaSessionConfiguration.psd1'
-        'DSCClassResources\JeaRoleCapabilities\JeaRoleCapabilities.psd1'
-    )
+    NestedModules        = @()
 
     FunctionsToExport    = @(
         'ConvertTo-Expression'

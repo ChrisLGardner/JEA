@@ -5,9 +5,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Adding herited classes that contains helper methods.
+
 ### Changed
 
 - Moving code from constructor to separate method.
+- Moving the class based resources from nested modules to root module.
 
 ## [0.7.1] - 2020-08-26
 
