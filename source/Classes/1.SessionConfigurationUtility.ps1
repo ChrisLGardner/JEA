@@ -22,7 +22,7 @@ class SessionConfigurationUtility
         if (-not $this.GroupManagedServiceAccount)
         {
             $this.RunAsVirtualAccount = $true
-            Write-Warning "'GroupManagedServiceAccount' and 'RunAsVirtualAccount' are not defined, setting 'RunAsVirtualAccount' to 'true'."
+            Write-Warning -Message $script:localizedDataSession.NotDefinedGMSaAndVirtualAccount
         }
 
         return $true
@@ -51,7 +51,7 @@ class SessionConfigurationUtility
         }
         else
         {
-            Write-Verbose 'WinRM service is not running. Cannot get PS Session Configuration(s).'
+            Write-Verbose -Message $script:localizedDataSession.WinRMNotRunningGetPsSession
             return $null
         }
     }
@@ -70,7 +70,7 @@ class SessionConfigurationUtility
         }
         else
         {
-            throw "WinRM service is not running. Cannot unregister PS Session Configuration '$Name'."
+            throw ($script:localizedDataSession.WinRMNotRunningUnRegisterPsSession -f $Name)
         }
     }
 
@@ -80,7 +80,7 @@ class SessionConfigurationUtility
         $winRMService = Get-Service -Name 'WinRM'
         if ($winRMService -and $winRMService.Status -eq 'Running')
         {
-            Write-Verbose "Will register PSSessionConfiguration with argument: Name = '$Name', Path = '$Path' and Timeout = '$Timeout'"
+            Write-Verbose -Message ($script:localizedDataSession.RegisterPSSessionConfiguration -f $Name,$Path,$Timeout)
             # Register-PSSessionConfiguration has been hanging because the WinRM service is stuck in Stopping state
             # therefore we need to run Register-PSSessionConfiguration within a job to allow us to handle a hanging WinRM service
 
@@ -122,14 +122,14 @@ class SessionConfigurationUtility
                 if ($winRMService -and $winRMService.Status -eq 'StopPending')
                 {
                     $processId = Get-CimInstance -ClassName 'Win32_Service' -Filter "Name LIKE 'WinRM'" | Select-Object -ExpandProperty ProcessId
-                    Write-Verbose "WinRM seems hanging in Stopping state. Forcing process $processId to stop"
+                    Write-Verbose -Message ($script:localizedDataSession.ForcingProcessToStop -f $processId)
                     $failureList = @()
                     try
                     {
                         # Kill the process hosting WinRM service
                         Stop-Process -Id $processId -Force
                         Start-Sleep -Seconds 5
-                        Write-Verbose "Restarting services: $($serviceList -join ', ')"
+                        Write-Verbose -Message ($script:localizedDataSession.RegisterPSSessionConfiguration -f $($serviceList -join ', '))
                         # Then restart all services previously identified
                         foreach ($service in $serviceList)
                         {
@@ -139,23 +139,23 @@ class SessionConfigurationUtility
                             }
                             catch
                             {
-                                $failureList += "Start service $service"
+                                $failureList += $script:localizedDataSession.FailureListStartService -f $service
                             }
                         }
                     }
                     catch
                     {
-                        $failureList += "Kill WinRM process"
+                        $failureList += $script:localizedDataSession.FailureListKillWinRMProcess
                     }
 
                     if ($failureList)
                     {
-                        Write-Verbose "Failed to execute following operation(s): $($failureList -join ', ')"
+                        Write-Verbose -Message ($script:localizedDataSession.FailureListKillWinRMProcess -f $($failureList -join ', '))
                     }
                 }
                 elseif ($winRMService -and $winRMService.Status -eq 'Stopped')
                 {
-                    Write-Verbose '(Re)starting WinRM service'
+                    Write-Verbose -Message $script:localizedDataSession.RestartWinRM
                     Start-Service -Name 'WinRM'
                 }
             }
@@ -166,7 +166,7 @@ class SessionConfigurationUtility
         }
         else
         {
-            throw "WinRM service is not running. Cannot register PS Session Configuration '$Name'"
+            throw ($script:localizedDataSession.WinRMNotRunningRegisterPsSession -f $Name)
         }
     }
 

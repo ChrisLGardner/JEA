@@ -1,4 +1,18 @@
 ConvertFrom-StringData @'
-    ConflictRunAsVirtualAccountGroupsAndGroupManagedServiceAccount           = "The 'RunAsVirtualAccountGroups' setting can not be used when a configuration is set to run as a Group Managed Service Account."
-    ConflictRunAsVirtualAccountAndGroupManagedServiceAccount                 = "The properties 'GroupManagedServiceAccount' and 'RunAsVirtualAccount' cannot be used together."
+    ConflictRunAsVirtualAccountGroupsAndGroupManagedServiceAccount  = The 'RunAsVirtualAccountGroups' setting can not be used when a configuration is set to run as a Group Managed Service Account. (JSC0001)
+    ConflictRunAsVirtualAccountAndGroupManagedServiceAccount        = The properties 'GroupManagedServiceAccount' and 'RunAsVirtualAccount' cannot be used together. (JSC0002)
+    WinRMNotRunningGetPsSession                                     = WinRM service is not running. Cannot get PS Session Configuration(s). (JSC0003)
+    WinRMNotRunningUnRegisterPsSession                              = WinRM service is not running. Cannot unregister PS Session Configuration '{0}'. (JSC0004)
+    WinRMNotRunningRegisterPsSession                                = WinRM service is not running. Cannot register PS Session Configuration '{0}'. (JSC0005)
+    NotDefinedGMSaAndVirtualAccount                                 = 'GroupManagedServiceAccount' and 'RunAsVirtualAccount' are not defined, setting 'RunAsVirtualAccount' to 'true'. (JSC0006)
+    RegisterPSSessionConfiguration                                  = Will register PSSessionConfiguration with argument: Name = '{0}', Path = '{1}' and Timeout = '{2}' (JSC0007)
+    ForcingProcessToStop                                            = WinRM seems hanging in Stopping state. Forcing process {0} to stop. (JSC0008)
+    RestartingServices                                              = "Restarting services: {0} (JSC0009)
+    FailureListStartService                                         = Start service {0} (JSC0010)
+    FailureListKillWinRMProcess                                     = Kill WinRM process. (JSC0011)
+    FailedExecuteOperation                                          = Failed to execute following operation(s): {0} (JSC0012)
+    RestartWinRM                                                    = (Re)starting WinRM service (JSC0013)
+    StoringPSSessionConfigurationFile                               = Storing PSSessionConfigurationFile in file {0} (JSC0013)
+    DesiredStateSessionConfiguration                                = Desired state of session configuration named '{0}' is '{1}', current state is '{2}'. (JSC0014)
+    PSSessionConfigurationNamePresent                               = Name present: {0} (JSC0015)
 '@

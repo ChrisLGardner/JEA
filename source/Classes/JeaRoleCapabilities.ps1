@@ -153,8 +153,8 @@ class JeaRoleCapabilities:RoleCapabilitiesUtility
                 {
                     if ($functionDefinitionName -notin $desiredState['VisibleFunctions'])
                     {
-                        Write-Verbose "Function defined but not visible to Role Configuration: $functionDefinitionName"
-                        Write-Error "Function defined but not visible to Role Configuration: $functionDefinitionName"
+                        Write-Verbose ($script:localizedDataRole.FunctionDefinedNotVisible -f $functionDefinitionName)
+                        Write-Error ($script:localizedDataRole.FunctionDefinedNotVisible -f $functionDefinitionName)
                         $invalidConfiguration = $true
                     }
                 }
@@ -182,7 +182,7 @@ class JeaRoleCapabilities:RoleCapabilitiesUtility
     {
         if (-not ($this.ValidatePath()))
         {
-            Write-Error -Message "Invalid path specified. It must point to a Module folder, be a psrc file and the parent folder must be called RoleCapabilities"
+            Write-Error -Message ($script:localizedDataRole.ValidatingPath -f $fileObject.Fullname)
             return $false
         }
         if ($this.Ensure -eq [Ensure]::Present -and -not (Test-Path -Path $this.Path))

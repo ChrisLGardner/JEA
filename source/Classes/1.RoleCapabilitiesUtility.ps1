@@ -10,23 +10,23 @@ class RoleCapabilitiesUtility
     hidden [boolean] ValidatePath()
     {
         $fileObject = [System.IO.FileInfo]::new($this.Path)
-        Write-Verbose -Message "Validating Path: $($fileObject.Fullname)"
-        Write-Verbose -Message "Checking file extension is psrc for: $($fileObject.Fullname)"
+        Write-Verbose -Message ($script:localizedDataRole.ValidatingPath -f $fileObject.Fullname)
+        Write-Verbose -Message ($script:localizedDataRole.CheckPsrcExtension -f $fileObject.Fullname)
         if ($fileObject.Extension -ne '.psrc')
         {
-            Write-Verbose -Message "Doesn't have psrc extension for: $($fileObject.Fullname)"
+            Write-Verbose -Message ($script:localizedDataRole.NotPsrcExtension -f $fileObject.Fullname)
             return $false
         }
 
-        Write-Verbose -Message "Checking parent forlder is RoleCapabilities for: $($fileObject.Fullname)"
+        Write-Verbose -Message ($script:localizedDataRole.CheckParentFolder -f $fileObject.Fullname)
         if ($fileObject.Directory.Name -ne 'RoleCapabilities')
         {
-            Write-Verbose -Message "Parent folder isn't RoleCapabilities for: $($fileObject.Fullname)"
+            Write-Verbose -Message ($script:localizedDataRole.NotRoleCapabilitiesParent -f $fileObject.Fullname)
             return $false
         }
 
 
-        Write-Verbose -Message 'Path is a valid psrc path. Returning true.'
+        Write-Verbose -Message $script:localizedDataRole.ValidePsrcPath
         return $true
     }
 }

@@ -137,7 +137,7 @@ class JeaSessionConfiguration:SessionConfigurationUtility
         $this.TestParameters()
 
         $psscPath = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName() + '.pssc')
-        Write-Verbose "Storing PSSessionConfigurationFile in file '$psscPath'"
+        Write-Verbose -Message ($script:localizedDataSession.StoringPSSessionConfigurationFile -f $psscPath)
         $desiredState = Convert-ObjectToHashtable -Object $this
         $desiredState.Add('Path', $psscPath)
 
@@ -203,7 +203,7 @@ class JeaSessionConfiguration:SessionConfigurationUtility
         # short-circuit if the resource is not present and is not supposed to be present
         if ($currentState.Ensure -ne $desiredState.Ensure)
         {
-            Write-Verbose "Desired state of session configuration named '$($currentState.Name)' is '$($desiredState.Ensure)', current state is '$($currentState.Ensure)' "
+            Write-Verbose -Message ($script:localizedDataSession.FailureListKillWinRMProcess -f $currentState.Name,$desiredState.Ensure,$currentState.Ensure )
             return $false
         }
         if ($this.Ensure -eq [Ensure]::Absent)
@@ -213,7 +213,7 @@ class JeaSessionConfiguration:SessionConfigurationUtility
                 return $true
             }
 
-            Write-Verbose "Name present: $($currentState.Name)"
+            Write-Verbose ($script:localizedDataSession.PSSessionConfigurationNamePresent -f $currentState.Name)
             return $false
         }
 
