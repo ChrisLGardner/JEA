@@ -11,10 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Moving code from constructor to separate method.
 - Moving the class based resources from nested modules to root module.
 - Moving LocalizedData of class based resources in .strings.psd1 files.
 Based on [stylesguidelines](https://dsccommunity.org/styleguidelines/localization/) of DscCommunity.
+
+## [0.7.2] - 2020-09-29
+
+### Changed
+
+- Moving code from constructor to separate method.
 
 ## [0.7.1] - 2020-08-26
 
