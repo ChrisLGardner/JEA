@@ -182,7 +182,7 @@ class JeaRoleCapabilities:RoleCapabilitiesUtility
     {
         if (-not ($this.ValidatePath()))
         {
-            Write-Error -Message ($script:localizedDataRole.ValidatingPath -f $fileObject.Fullname)
+            Write-Error -Message $script:localizedDataRole.InvalidPath
             return $false
         }
         if ($this.Ensure -eq [Ensure]::Present -and -not (Test-Path -Path $this.Path))
