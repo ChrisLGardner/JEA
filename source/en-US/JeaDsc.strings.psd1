@@ -1,3 +1,3 @@
 ConvertFrom-StringData @'
-    Dummy = 'DummyValue'
+
 '@

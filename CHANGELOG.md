@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moving LocalizedData of class based resources in .strings.psd1 files.
 Based on [stylesguidelines](https://dsccommunity.org/styleguidelines/localization/) of DscCommunity.
 
+### Removed
+
+- Removing dummy object
+
 ## [0.7.2] - 2020-09-29
 
 ### Changed
