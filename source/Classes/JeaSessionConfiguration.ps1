@@ -298,14 +298,14 @@ class JeaSessionConfiguration:SessionConfigurationUtility
         }
 
         # Compare current and desired state to add reasons
-        $valuesToCheck = $this.psobject.properties.name.where({$_ -notin 'Name','Reasons'})
+        $valuesToCheck = $this.psobject.Properties.Name.Where({$_ -notin 'Name','Reasons'})
 
         $compareState = Compare-DscParameterState `
             -CurrentValues ($currentState | Convert-ObjectToHashtable) `
             -DesiredValues ($this | Convert-ObjectToHashtable) `
             -ValuesToCheck $valuesToCheck | Where-Object {$_.InDesiredState -eq $false }
 
-        $currentState.reasons = switch ($compareState)
+        $currentState.Reasons = switch ($compareState)
         {
             {$_.Property -eq 'Ensure'}{
                 [Reason]@{
