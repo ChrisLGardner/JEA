@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adding herited classes that contains helper methods.
 - Adding Reason class.
 - Adding Reasons property in JeaSessionConfiguration and JeaRoleCapabilities resources.
-  It'a a requirement of [Guest Configuration](https://docs.microsoft.com/en-us/azure/governance/policy/how-to/guest-configuration-create#get-targetresource-requirements)
+  It's a requirement of [Guest Configuration](https://docs.microsoft.com/en-us/azure/governance/policy/how-to/guest-configuration-create#get-targetresource-requirements)
 - Adding pester tests to check Reasons property.
 
 ### Changed
