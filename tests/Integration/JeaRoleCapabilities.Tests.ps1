@@ -70,6 +70,15 @@ InModuleScope JeaDsc {
 
                     $result.VisibleCmdlets | Should -Be 'Get-Command'
                 }
+
+                It 'Should return an object with property Reasons set to empty' {
+                    $null = New-Item -Path $class.Path -Force
+                    $null = New-PSRoleCapabilityFile -Path $class.Path -VisibleCmdlets 'Get-Command'
+
+                    $result = $class.Get()
+
+                    $result.Reasons | Should -BeNullOrEmpty
+                }
             }
 
             Context 'Testing Get method when Ensure is Absent' {
@@ -80,10 +89,24 @@ InModuleScope JeaDsc {
                     $result.GetType().Name | Should -Be 'JeaRoleCapabilities'
                 }
 
-                It 'Should return an object with property Ensure set to Present' {
+                It 'Should return an object with property Ensure set to Absent' {
                     $result = $class.Get()
 
                     $result.Ensure | Should -Be 'Absent'
+                }
+
+                It 'Should return an object with property Reasons set to not empty' {
+                    $result = $class.Get()
+
+                    $result.Reasons | Should -Not -BeNullOrEmpty
+                }
+
+                It 'Should return an object with property Reasons set with Ensure information' {
+                    $result = $class.Get()
+
+                    $result.Reasons.Code | Should -HaveCount 1
+                    $result.Reasons.Code | Should -Be 'JeaRoleCapabilities:JeaRoleCapabilities:Ensure'
+                    $result.Reasons.Phrase | Should -Be $($script:localizedDataRole.ReasonFileNotFound -f $class.Path)
                 }
             }
 

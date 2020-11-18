@@ -130,6 +130,10 @@ class JeaSessionConfiguration:SessionConfigurationUtility
     [Dscproperty()]
     [int] $HungRegistrationTimeout = 10
 
+    # Contains the not compliant properties detected in Get() method.
+    [DscProperty(NotConfigurable)]
+    [Reason[]]$Reasons
+
     [void] Set()
     {
         $ErrorActionPreference = 'Stop'
@@ -249,6 +253,14 @@ class JeaSessionConfiguration:SessionConfigurationUtility
         if (-not $sessionConfiguration -or -not $sessionConfiguration.ConfigFilePath)
         {
             $currentState.Ensure = [Ensure]::Absent
+            if ($this.Ensure -eq [Ensure]::Present)
+            {
+                $currentState.Reasons = [Reason]@{
+                    Code = '{0}:{0}:Ensure' -f $this.GetType()
+                    Phrase = $script:localizedDataSession.ReasonEpSessionNotFound -f $this.Name
+                }
+            }
+
             return $currentState
         }
 
@@ -281,6 +293,38 @@ class JeaSessionConfiguration:SessionConfigurationUtility
                 else
                 {
                     $propertyValue
+                }
+            }
+        }
+
+        # Compare current and desired state to add reasons
+        $valuesToCheck = $this.psobject.properties.name.where({$_ -notin 'Name','Reasons'})
+
+        $compareState = Compare-DscParameterState `
+            -CurrentValues ($currentState | Convert-ObjectToHashtable) `
+            -DesiredValues ($this | Convert-ObjectToHashtable) `
+            -ValuesToCheck $valuesToCheck | Where-Object {$_.InDesiredState -eq $false }
+
+        $currentState.reasons = switch ($compareState)
+        {
+            {$_.Property -eq 'Ensure'}{
+                [Reason]@{
+                    Code = '{0}:{0}:{1}' -f $this.GetType(),$_.Property
+                    Phrase = $script:localizedDataSession.ReasonEnsure -f $this.Path
+                }
+                continue
+            }
+            {$_.Property -eq 'Description'}{
+                [Reason]@{
+                    Code = '{0}:{0}:{1}' -f $this.GetType(),$_.Property
+                    Phrase = $script:localizedDataSession.ReasonDescription -f $this.Description
+                }
+                continue
+            }
+            default {
+                [Reason]@{
+                    Code = '{0}:{0}:{1}' -f $this.GetType(),$_.Property
+                    Phrase = $script:localizedDataSession."Reason$($_.Property)"
                 }
             }
         }

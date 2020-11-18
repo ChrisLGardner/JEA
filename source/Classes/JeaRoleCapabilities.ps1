@@ -84,6 +84,10 @@ class JeaRoleCapabilities:RoleCapabilitiesUtility
     [DscProperty()]
     [string[]]$AssembliesToLoad
 
+    # Reasons of why the resource isn't in desired state
+    [DscProperty(NotConfigurable)]
+    [Reason[]]$Reasons
+
     [JeaRoleCapabilities] Get()
     {
         $currentState = [JeaRoleCapabilities]::new()
@@ -123,10 +127,49 @@ class JeaRoleCapabilities:RoleCapabilitiesUtility
                 }
             }
             $currentState.Ensure = [Ensure]::Present
+
+            # Compare current and desired state to add reasons
+            $valuesToCheck = $this.psobject.properties.name.where({$_ -notin 'Path','Reasons'})
+
+            $compareState = Compare-DscParameterState `
+                -CurrentValues ($currentState | Convert-ObjectToHashtable) `
+                -DesiredValues ($this | Convert-ObjectToHashtable) `
+                -ValuesToCheck $valuesToCheck | Where-Object {$_.InDesiredState -eq $false }
+
+            $currentState.reasons = switch ($compareState)
+            {
+                {$_.Property -eq 'Ensure'}{
+                    [Reason]@{
+                        Code = '{0}:{0}:{1}' -f $this.GetType(),$_.Property
+                        Phrase = $script:localizedDataRole.ReasonEnsure -f $this.Path
+                    }
+                    continue
+                }
+                {$_.Property -eq 'Description'}{
+                    [Reason]@{
+                        Code = '{0}:{0}:{1}' -f $this.GetType(),$_.Property
+                        Phrase = $script:localizedDataRole.ReasonDescription -f $this.Description
+                    }
+                    continue
+                }
+                default {
+                    [Reason]@{
+                        Code = '{0}:{0}:{1}' -f $this.GetType(),$_.Property
+                        Phrase = $script:localizedDataRole."Reason$($_.Property)"
+                    }
+                }
+            }
         }
         else
         {
             $currentState.Ensure = [Ensure]::Absent
+            if ($this.Ensure -eq [Ensure]::Present)
+            {
+                $currentState.Reasons = [Reason]@{
+                    Code = '{0}:{0}:Ensure' -f $this.GetType()
+                    Phrase = $script:localizedDataRole.ReasonFileNotFound -f $this.Path
+                }
+            }
         }
 
         return $currentState
