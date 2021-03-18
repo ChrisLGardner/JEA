@@ -18,7 +18,7 @@ class JeaSessionConfiguration:SessionConfigurationUtility
 
     ## run the endpoint under a Virtual Account
     [DscProperty()]
-    [bool] $RunAsVirtualAccount
+    [nullable[bool]] $RunAsVirtualAccount
 
     ## The optional groups to be used when the endpoint is configured to
     ## run as a Virtual Account
