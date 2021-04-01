@@ -19,7 +19,7 @@ class SessionConfigurationUtility
             throw $script:localizedDataSession.ConflictRunAsVirtualAccountAndGroupManagedServiceAccount
         }
 
-        if (-not $this.GroupManagedServiceAccount)
+        if (-not $this.GroupManagedServiceAccount -and $null -eq $this.RunAsVirtualAccount)
         {
             $this.RunAsVirtualAccount = $true
             Write-Warning -Message $script:localizedDataSession.NotDefinedGMSaAndVirtualAccount
